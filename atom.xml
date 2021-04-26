@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-04-21T11:10:46.795Z</updated>
+    <updated>2021-04-26T03:15:46.627Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
@@ -10,6 +10,13 @@
     <logo>https://fqj-web.github.io/images/avatar.png</logo>
     <icon>https://fqj-web.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 飞琼君·WebOS</rights>
+    <entry>
+        <title type="html"><![CDATA[windows修改远程桌面RDP端口]]></title>
+        <id>https://fqj-web.github.io/post/windows-xiu-gai-yuan-cheng-zhuo-mian-rdp-duan-kou/</id>
+        <link href="https://fqj-web.github.io/post/windows-xiu-gai-yuan-cheng-zhuo-mian-rdp-duan-kou/">
+        </link>
+        <updated>2021-04-26T02:40:34.000Z</updated>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Github访问加速免费方式]]></title>
         <id>https://fqj-web.github.io/post/github-fang-wen-jia-su-mian-fei-fang-shi/</id>
@@ -37,12 +44,5 @@
         <link href="https://fqj-web.github.io/post/lab-he-zhui-wen-bu-chong/">
         </link>
         <updated>2021-03-07T06:13:42.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[QoS]]></title>
-        <id>https://fqj-web.github.io/post/qos/</id>
-        <link href="https://fqj-web.github.io/post/qos/">
-        </link>
-        <updated>2021-03-04T15:13:59.000Z</updated>
     </entry>
 </feed>

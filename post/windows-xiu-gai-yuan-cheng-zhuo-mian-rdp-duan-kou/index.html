@@ -8,7 +8,7 @@
 <meta name="keywords" content="飞琼君·个人博客">
 <meta name="description" content="仰天大笑出门去，吾辈岂是蓬高人！">
 <meta name="theme-color" content="#000">
-<title>CentOS7管理环境变量 | 飞琼君·WebOS</title>
+<title>windows修改远程桌面RDP端口 | 飞琼君·WebOS</title>
 <link rel="shortcut icon" href="/favicon.ico?v=1619406900285">
 <link rel="stylesheet" href="/media/css/gemini.css">
 <link rel="stylesheet" href="/media/fonts/font-awesome.css">
@@ -48,8 +48,8 @@
 </script>
 
 
-  <meta name="description" content="CentOS7管理环境变量" />
-  <meta name="keywords" content="linux运维" />
+  <meta name="description" content="windows修改远程桌面RDP端口" />
+  <meta name="keywords" content="Windows优化与设置" />
 </head>
 
 <body>
@@ -170,233 +170,6 @@
 
 <div class="sidebar">
   
-    <div class="sidebar-box box-shadow-wrapper bg-color right-motion" id="sidebar">
-      
-      <div class="sidebar-body gemini" id="sidebar_body">
-        
-          
-            <div style="opacity: 1;">
-              <div class="toc-box right-motion">
-  <div class="toc-wrapper auto-number no_compress"
-    id="toc_wrapper">
-    <ul class="markdownIt-TOC">
-<li><a href="#%E8%AE%BE%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F">设置环境变量</a>
-<ul>
-<li><a href="#%E4%B8%B4%E6%97%B6%E7%94%9F%E6%95%88">临时生效</a></li>
-<li><a href="#%E9%92%88%E5%AF%B9%E5%BD%93%E5%89%8D%E7%94%A8%E6%88%B7%E6%B0%B8%E4%B9%85%E7%94%9F%E6%95%88">针对当前用户（永久生效）</a></li>
-<li><a href="#%E9%92%88%E5%AF%B9%E6%89%80%E6%9C%89%E7%94%A8%E6%88%B7%E6%B0%B8%E4%B9%85%E7%94%9F%E6%95%88">针对所有用户（永久生效）</a></li>
-<li><a href="#%E6%8E%A8%E8%8D%90%E4%BD%BF%E7%94%A8etcprofiled">推荐使用/etc/profile.d</a></li>
-</ul>
-</li>
-<li><a href="#bash_profile%E5%92%8Cbashrc">.bash_profile和.bashrc</a>
-<ul>
-<li><a href="#etcprofile">/etc/profile</a></li>
-<li><a href="#etcbashrc%E6%8E%A8%E8%8D%90">/etc/bashrc（推荐）</a></li>
-<li><a href="#~bash_profile">~/.bash_profile</a></li>
-<li><a href="#~bashrc%E6%8E%A8%E8%8D%90">~/.bashrc（推荐）</a></li>
-<li><a href="#~bash_logout">~/.bash_logout</a></li>
-</ul>
-</li>
-<li><a href="#%E5%90%AF%E5%8A%A8%E6%96%87%E4%BB%B6%E7%9A%84%E5%8A%A0%E8%BD%BD%E9%A1%BA%E5%BA%8F">启动文件的加载顺序</a>
-<ul>
-<li><a href="#%E4%BA%A4%E4%BA%92%E5%BC%8F%E7%9A%84%E7%99%BB%E9%99%86shell">交互式的登陆shell</a>
-<ul>
-<li><a href="#%E7%99%BB%E9%99%86%E8%BF%87%E7%A8%8B">登陆过程</a></li>
-<li><a href="#%E7%99%BB%E5%87%BA%E8%BF%87%E7%A8%8B">登出过程</a></li>
-</ul>
-</li>
-<li><a href="#%E9%9D%9E%E4%BA%A4%E4%BA%92%E5%BC%8F%E7%99%BB%E9%99%86shell">非交互式登陆shell</a>
-<ul>
-<li><a href="#%E7%99%BB%E9%99%86%E8%BF%87%E7%A8%8B-2">登陆过程</a></li>
-</ul>
-</li>
-<li><a href="#%E5%85%B6%E4%BB%96%E6%83%85%E5%86%B5">其他情况</a></li>
-<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
-</ul>
-</li>
-</ul>
-
-  </div>
-</div>
-
-<script>
-
-  let lastTop = 0, lList = [], hList = [], postBody, lastIndex = -1;
-  let active = 'active-show', activeClass = 'active-current';
-  let tocWrapper = document.querySelector('#toc_wrapper');
-  let tocContent = tocWrapper.children[0];
-  let autoNumber = tocWrapper && tocWrapper.classList.contains('auto-number');
-
-  function addTocNumber(elem, deep) {
-    if (!elem) {
-      return;
-    }
-    let prop = elem.__proto__;
-
-    if (prop === HTMLUListElement.prototype) {
-      for (let i = 0; i < elem.children.length; i++) {
-        addTocNumber(elem.children[i], deep + (i + 1) + '.');
-      }
-    } else if (prop === HTMLLIElement.prototype) {
-      // 保存li元素
-      if (elem.children[0] && elem.children[0].__proto__ === HTMLAnchorElement.prototype) {
-        lList.push(elem);
-      }
-      for (let i = 0; i < elem.children.length; i++) {
-        let cur = elem.children[i];
-        if (cur.__proto__ === HTMLAnchorElement.prototype) {
-          if (autoNumber) {
-            cur.text = deep + ' ' + cur.text;
-          }
-        } else if (cur.__proto__ === HTMLUListElement.prototype) {
-          addTocNumber(cur, deep);
-        }
-      }
-    }
-  }
-
-  function removeParentActiveClass() {
-    let parents = tocContent.querySelectorAll('.' + active)
-    parents.forEach(function (elem) {
-      elem.classList.remove(active);
-    });
-  }
-
-  function addActiveClass(index) {
-    if (index >= 0 && index < hList.length) {
-      lList[index].classList.add(activeClass);
-    }
-  }
-
-  function removeActiveClass(index) {
-    if (index >= 0 && index < hList.length) {
-      lList[index].classList.remove(activeClass);
-    }
-  }
-
-  function addActiveLiElemment(elem, parent) {
-    if (!elem || elem === parent) {
-      return;
-    } else {
-      if (elem.__proto__ === HTMLLIElement.prototype) {
-        elem.classList.add(active);
-      }
-      addActiveLiElemment(elem.parentElement, parent);
-    }
-  }
-
-  function showToc() {
-    if (tocWrapper) {
-      postBody = document.querySelector('#post_body');
-      for (let i = 0; i < postBody.children.length; i++) {
-        if (postBody.children[i].__proto__ === HTMLHeadingElement.prototype) {
-          hList.push(postBody.children[i]);
-        }
-      }
-      if (tocWrapper.classList.contains('compress')) {
-        tocContent.classList.add('closed');
-      } else if (tocWrapper.classList.contains('no_compress')) {
-        tocContent.classList.add('expanded');
-      } else {
-        if (hList.length > 10) {
-          active = 'active-hidden'
-          tocContent.classList.add('closed');
-        } else {
-          tocContent.classList.add('expanded');
-        }
-      }
-    }
-  }
-
-  (function () {
-    // 处理不是从#一级标题开始目录
-    if (tocContent.children.length === 1 && tocContent.children[0].__proto__ === HTMLLIElement.prototype) {
-      let con = tocContent.children[0].children[0];
-      tocContent.innerHTML = con.innerHTML;
-    }
-    let markdownItTOC = document.querySelector('.markdownIt-TOC');
-    let innerHeight = window.innerHeight;
-    markdownItTOC.style = `max-height: ${innerHeight - 80 > 0 ? innerHeight - 80 : innerHeight}px`
-    addTocNumber(tocContent, '');
-  })();
-
-  document.addEventListener('scroll', function (e) {
-    if (lList.length <= 0) {
-      return;
-    }
-    let scrollTop = document.scrollingElement.scrollTop + 10;
-    let dir;
-
-    if (lastTop - scrollTop > 0) {
-      dir = 'up';
-    } else {
-      dir = 'down';
-    }
-
-    lastTop = scrollTop;
-    if (scrollTop <= 0) {
-      if (lastIndex >= 0 && lastIndex < hList.length) {
-        lList[lastIndex].classList.remove(activeClass);
-      }
-      return;
-    }
-
-    let current = 0, hasFind = false;
-    for (let i = 0; i < hList.length; i++) {
-      if (hList[i].offsetTop > scrollTop) {
-        current = i;
-        hasFind = true;
-        break;
-      }
-    }
-    if (!hasFind && scrollTop > lList[lList.length - 1].offsetTop) {
-      current = hList.length - 1;
-    } else {
-      current--;
-    }
-    if (dir === 'down') {
-      if (current > lastIndex) {
-        addActiveClass(current);
-        removeActiveClass(lastIndex)
-        lastIndex = current;
-        removeParentActiveClass();
-        lList[current] && addActiveLiElemment(lList[current].parentElement, tocContent);
-      }
-    } else {
-      if (current < lastIndex) {
-        addActiveClass(current);
-        removeActiveClass(lastIndex);
-        lastIndex = current;
-        removeParentActiveClass();
-        lList[current] && addActiveLiElemment(lList[current].parentElement, tocContent);
-      }
-    }
-  });
-
-
-  window.addEventListener('load', function () {
-    showToc();
-    document.querySelector('#sidebar').style = 'display: block;';
-    tocWrapper.classList.add('toc-active');
-    setTimeout(function () {
-      if ("createEvent" in document) {
-        let evt = document.createEvent("HTMLEvents");
-        evt.initEvent("scroll", false, true);
-        document.dispatchEvent(evt);
-      }
-      else {
-        document.fireEvent("scroll");
-      }
-    }, 500)
-  })
-
-</script>
-            </div>
-          
-        
-      </div>
-    </div>
-  
 </div>
 <script>
   const SIDEBAR_TITLE_ACTIVE = 'sidebar-title-active';
@@ -479,8 +252,8 @@
           <div class="section bg-color post post-page">
             <section class="post-header">
   <h1 class="post-title">
-    <a class="post-title-link" href="https://fqj-web.github.io/post/centos-guan-li-huan-jing-bian-liang/">
-      CentOS7管理环境变量
+    <a class="post-title-link" href="https://fqj-web.github.io/post/windows-xiu-gai-yuan-cheng-zhuo-mian-rdp-duan-kou/">
+      windows修改远程桌面RDP端口
     </a>
   </h1>
   <div class="post-meta">
@@ -488,7 +261,7 @@
     <span class="meta-item pc-show">
       <i class="fa fa-calendar-o"></i>
       <span class="language" data-lan="publish">发布于</span>
-      <span class="publish-time" data-t="2020-08-31 09:49:46">2020-08-31</span>
+      <span class="publish-time" data-t="2021-04-26 10:40:34">2021-04-26</span>
       <span class="post-meta-divider pc-show">|</span>
     </span>
     
@@ -497,8 +270,8 @@
       <span class="pc-show language" data-lan="category-in">分类于</span>
       
       
-      <a href="https://fqj-web.github.io/tag/nAh6_wabP/">
-        <span>linux运维</span>
+      <a href="https://fqj-web.github.io/tag/sn62Xc-4C/">
+        <span>Windows优化与设置</span>
       </a>
       
       
@@ -507,167 +280,35 @@
     
     <span class="meta-item">
       <i class="fa fa-clock-o"></i>
-      <span>6<span class="language" data-lan="minute">分钟</span></span>
+      <span>2<span class="language" data-lan="minute">分钟</span></span>
     </span>
     <span class="meta-item">
       <span class="post-meta-divider">|</span>
       <i class="fa fa-file-word-o"></i>
-      <span>1562<span class="pc-show language" data-lan="words">字数</span></span>
+      <span>354<span class="pc-show language" data-lan="words">字数</span></span>
     </span>
     
   </div>
 </section>
             <div class="post-body next-md-body" id="post_body">
-              <p><ul class="markdownIt-TOC">
-<li><a href="#%E8%AE%BE%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F">设置环境变量</a>
-<ul>
-<li><a href="#%E4%B8%B4%E6%97%B6%E7%94%9F%E6%95%88">临时生效</a></li>
-<li><a href="#%E9%92%88%E5%AF%B9%E5%BD%93%E5%89%8D%E7%94%A8%E6%88%B7%E6%B0%B8%E4%B9%85%E7%94%9F%E6%95%88">针对当前用户（永久生效）</a></li>
-<li><a href="#%E9%92%88%E5%AF%B9%E6%89%80%E6%9C%89%E7%94%A8%E6%88%B7%E6%B0%B8%E4%B9%85%E7%94%9F%E6%95%88">针对所有用户（永久生效）</a></li>
-<li><a href="#%E6%8E%A8%E8%8D%90%E4%BD%BF%E7%94%A8etcprofiled">推荐使用/etc/profile.d</a></li>
-</ul>
-</li>
-<li><a href="#bash_profile%E5%92%8Cbashrc">.bash_profile和.bashrc</a>
-<ul>
-<li><a href="#etcprofile">/etc/profile</a></li>
-<li><a href="#etcbashrc%E6%8E%A8%E8%8D%90">/etc/bashrc（推荐）</a></li>
-<li><a href="#~bash_profile">~/.bash_profile</a></li>
-<li><a href="#~bashrc%E6%8E%A8%E8%8D%90">~/.bashrc（推荐）</a></li>
-<li><a href="#~bash_logout">~/.bash_logout</a></li>
-</ul>
-</li>
-<li><a href="#%E5%90%AF%E5%8A%A8%E6%96%87%E4%BB%B6%E7%9A%84%E5%8A%A0%E8%BD%BD%E9%A1%BA%E5%BA%8F">启动文件的加载顺序</a>
-<ul>
-<li><a href="#%E4%BA%A4%E4%BA%92%E5%BC%8F%E7%9A%84%E7%99%BB%E9%99%86shell">交互式的登陆shell</a>
-<ul>
-<li><a href="#%E7%99%BB%E9%99%86%E8%BF%87%E7%A8%8B">登陆过程</a></li>
-<li><a href="#%E7%99%BB%E5%87%BA%E8%BF%87%E7%A8%8B">登出过程</a></li>
-</ul>
-</li>
-<li><a href="#%E9%9D%9E%E4%BA%A4%E4%BA%92%E5%BC%8F%E7%99%BB%E9%99%86shell">非交互式登陆shell</a>
-<ul>
-<li><a href="#%E7%99%BB%E9%99%86%E8%BF%87%E7%A8%8B-2">登陆过程</a></li>
-</ul>
-</li>
-<li><a href="#%E5%85%B6%E4%BB%96%E6%83%85%E5%86%B5">其他情况</a></li>
-<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
-</ul>
-</li>
-</ul>
-</p>
-<h1 id="设置环境变量">设置环境变量</h1>
-<p>以安装软件SoftA为例，路径为/usr/local/SoftA/bin/softa。</p>
-<h2 id="临时生效">临时生效</h2>
-<pre><code class="language-shell">export PATH=$PATH:/usr/local/SoftA/bin
-</code></pre>
-<h2 id="针对当前用户永久生效">针对当前用户（永久生效）</h2>
-<pre><code class="language-shell"># vim ~/.bash_profile
-vim ~/.bashrc
-    # 修改文件中PATH 一行，PATH=$PATH:$HOME/bin之后添加 （注意以冒号分隔）
-    # 修改完之后如下：
-    PATH=$PATH:$HOME/bin:/usr/local/SoftA/bin
-    export PATH
-# source ~/.bash_profile
-source ~/.bashrc
-</code></pre>
-<h2 id="针对所有用户永久生效">针对所有用户（永久生效）</h2>
-<pre><code class="language-shell"># vim /etc/profile
-vim /etc/bashrc
-    # 文件末尾追加
-    PATH=$PATH:/usr/local/SoftA/bin
-    export PATH
-# source /etc/profile
-source /etc/bashrc
-</code></pre>
-<h2 id="推荐使用etcprofiled">推荐使用/etc/profile.d</h2>
-<p><code>/etc/profile</code>和<code>/etc/profile.d</code>的区别：两个都是设置环境变量的，<code>/etc/profile.d/</code>比<code>/etc/profile</code>好维护，不想要什么变量直接删除<code>/etc/profile.d/</code>下对应的shell脚本即可，不用像/etc/profile需要改动此文件。</p>
-<pre><code class="language-shell">vim /etc/profile.d/softa.sh
-    # 设置SoftA的环境变量
-    SOFTA_HOME=/usr/local/SoftA
-    PATH=$SOFTA_HOME/bin:$PATH
-    export SOFTA_HOME PATH
-chmod 755 /etc/profile.d/softa.sh
-/etc/profile.d/softa.sh
-echo $SOFTA_HOME
-</code></pre>
-<hr>
-<h1 id="bash_profile和bashrc">.bash_profile和.bashrc</h1>
-<p><code>“profile”系列文件的主要目的在于为“登录shell”设置环境变量和启动程序；而“rc”系列文件的主要目的在于设置功能和别名</code><br>
-<code>crontab里面执行一个命令，.bashrc设置的环境变量会生效，而.bash_profile不会</code></p>
-<h2 id="etcprofile">/etc/profile</h2>
-<p>此文件为系统的每个用户设置环境信息，当用户第一次登录时，该文件被执行，并从/etc/profile.d目录的配置文件中搜集shell的设置<br>
-推荐使用这种方法，因为所有用户的shell都有权使用这些环境变量，缺点是可能会给系统带来安全性问题。 这里是针对所有的用户的，所有的shell<br>
-<strong>需要注意的是</strong>：</p>
+              <ol>
+<li>修改之前确认已经打开远程桌面的功能：<br>
+如果没有开启，可执行以下步骤：win+E打开资源管理器--&gt;右键点击“此电脑”并选择“属性”--&gt;左击“远程设置”--&gt;在远程选项卡中选择“允许远程连接到此计算机”，默认是所有用户，可以根据自己的需求选择只能通过某些用户远程</li>
+<li>修改远程桌面默认端口号（举例使用12345端口）：
 <ol>
-<li>在/etc/profile里设置系统环境变量时，路径末尾不能以&quot;/&quot;结尾，否则将导致整个PATH变量出错</li>
-<li>配置好环境变量后，要记得export输出这个变量，否则如下source后无效</li>
-</ol>
-<h2 id="etcbashrc推荐">/etc/bashrc（推荐）</h2>
-<p>为每一个运行bash shell的用户执行此文件，当bash shell被打开时,该文件被读取</p>
-<h2 id="~bash_profile">~/.bash_profile</h2>
-<p>每个用户都可使用该文件输入专用于自己使用的shell信息，当用户<strong>登录时</strong>，该文件<strong>仅仅执行一次</strong>，默认情况下，他设置一些环境变量，执行用户的.bashrc文件<br>
-<code>交互式、login方式进入bash运行的，通常会调用~/.bashrc</code></p>
-<h2 id="~bashrc推荐">~/.bashrc（推荐）</h2>
-<p>该文件包含专用于你的bash shell的bash信息，当<strong>登录时以及每次打开新的shell</strong>时,该该文件被读取<br>
-<code>~/.bashrc是交互式、non-login方式进入bash运行的，所以一般优先把变量设置在.bashrc里面，比如在crontab里面执行一个命令，.bashrc设置的环境变量会生效，而.bash_profile不会</code><br>
-修改.bashrc文件,这种方法更为安全，它可以把使用这些环境变量的权限控制到用户级别，这里是针对某一个特定的用户，如果需要给某个用户权限，使用这些环境变量，只需要修改其个人用户主目录下的.bashrc文件就可以了。</p>
-<h2 id="~bash_logout">~/.bash_logout</h2>
-<p>当每次**退出系统(退出bash shell)**时，执行该文件</p>
-<blockquote>
-<p>通过名字的不同，我们可以直观地将startup文件分为“profile”与“rc”两个系列，其实他们的功能都很类似，但是使用的场景不同，这也是最容易忽略的地方。<br>
-所谓的不同场景，其实就是shell的运行模式。运行中的bash有“交互”和“登陆”两种属性，而执行“profile”系列还是“rc”系列，就与shell的这两个属性有关。<br>
-原理上讲，“登陆shell”启动时会加载“profile”系列的startup文件，而“交互式非登陆shell”启动时会加载“rc”系列的startup文件。</p>
-</blockquote>
-<h1 id="启动文件的加载顺序">启动文件的加载顺序</h1>
-<figure data-type="image" tabindex="1"><img src="https://fqj-web.github.io/post-images/1598841315874.png" alt="启动文件的加载顺序" loading="lazy"></figure>
-<h2 id="交互式的登陆shell">交互式的登陆shell</h2>
-<h3 id="登陆过程">登陆过程</h3>
+<li>修改注册表：<code>运行regedit打开注册表</code>
 <ol>
-<li>读取并执行/etc/profile文件</li>
-<li>读取并执行~/.bash_profile文件</li>
-</ol>
-<ul>
-<li>若文件不存在，则读取并执行~/.bash_login文件</li>
-<li>若文件不存在，则读取并执行~/.profile文件</li>
-</ul>
-<h3 id="登出过程">登出过程</h3>
-<ol>
-<li>读取并执行~/.bash_logout文件</li>
-<li>读取并执行/etc/bash.bash_logout文件</li>
-</ol>
-<h2 id="非交互式登陆shell">非交互式登陆shell</h2>
-<h3 id="登陆过程-2">登陆过程</h3>
-<ol>
-<li>读取并执行/etc/profile文件</li>
-<li>读取并执行~/.bash_profile文件</li>
-</ol>
-<ul>
-<li>若文件不存在，则读取并执行~/.bash_login文件</li>
-<li>若文件不存在，则读取并执行~/.profile文件</li>
-</ul>
-<h2 id="其他情况">其他情况</h2>
-<ol>
-<li>图形模式登录时，顺序读取：/etc/profile和~/.profile</li>
-<li>图形模式登录后，打开终端时，顺序读取：/etc/bash.bashrc和~/.bashrc</li>
-<li>文本模式登录时，顺序读取：/etc/bash.bashrc，/etc/profile和~/.bash_profile</li>
-<li>从其它用户su到该用户，则分两种情况：
-<ol>
-<li>如果带-l参数（或-参数，–login参数），如：su -l username，则bash是lonin的，它将顺序读取以下配置文件：/etc/bash.bashrc，/etc/profile和~ /.bash_profile。</li>
-<li>如果没有带-l参数，则bash是non-login的，它将顺序读取：/etc/bash.bashrc和~/.bashrc</li>
+<li>将<code>HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\Wds\\rdpwd\\Tds\\tcp</code>中的<code>PortNamber</code>的值（使用十进制查看和修改，默认3389）修改为自己想要远程的端口，例如修改为12345</li>
+<li>同理，将<code>HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp</code>中的<code>PortNamber</code>的值也修改为自己想要的远程端口号，例如修改为12345</li>
+<li>如果开启了防火墙，可通过注册表修改防火墙的入站规则，修改方法如下：将<code>HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\SharedAccess\\Defaults\\FirewallPolicy\\FirewallRules</code>和<code>HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\SharedAccess\\Parameters\\FirewallPolicy\\FirewallRules</code>这两个注册表中的<code>RemoteDesktop-UserMode-In-TCP</code>的值中的3389全部修改为12345</li>
 </ol>
 </li>
-<li>注销时，或退出su登录的用户，如果是longin方式，那么bash会读取：~/.bash_logout</li>
-<li>执行自定义的shell文件时，若使用“bash -l a.sh”的方式，则bash会读取行：/etc/profile和~/.bash_profile，若使用其它方式，如：bash a.sh， ./a.sh，sh a.sh（这个不属于bash shell），则不会读取上面的任何文件。</li>
+<li>重启远程服务：<code>运行services.msc打开服务管理</code><br>
+找到服务“Remote Desktop Services”--&gt;右键选择“重新启动”</li>
 </ol>
-<h2 id="总结">总结</h2>
-<p><img src="https://fqj-web.github.io/post-images/1598840866352.png" alt="总结" loading="lazy"><br>
-上图解释：</p>
-<ol>
-<li>“直接执行”表示此文件被系统直接调用，它的执行是无条件的；</li>
-<li>“条件执行”表示此文件被系统调用是有先决条件的（没有优先级更高的文件可用）；</li>
-<li>“引用执行”表示此文件不是被系统直接调用的，而是被其他文件显式调用的；</li>
-<li>后面的数字表示文件被调用的顺序，数字越大调用越靠后；</li>
-<li>“非交互非登陆”shell的配置文件可以由BASH_ENV环境变量指定；</li>
+</li>
+<li>远程测试：<br>
+运行mstsc打开远程连接--&gt;输入<code>IP地址:端口号</code>，例如<code>192.168.1.1:12345</code>--&gt;远程连接</li>
 </ol>
 
             </div>
@@ -681,7 +322,7 @@ echo $SOFTA_HOME
     </li>
     <li class="post-copyright-link">
       <strong class="language" data-lan="link">本文链接：</strong>
-      <a href="https://fqj-web.github.io/post/centos-guan-li-huan-jing-bian-liang/" title="CentOS7管理环境变量">https://fqj-web.github.io/post/centos-guan-li-huan-jing-bian-liang/</a>
+      <a href="https://fqj-web.github.io/post/windows-xiu-gai-yuan-cheng-zhuo-mian-rdp-duan-kou/" title="windows修改远程桌面RDP端口">https://fqj-web.github.io/post/windows-xiu-gai-yuan-cheng-zhuo-mian-rdp-duan-kou/</a>
     </li>
     <li class="post-copyright-license">
       <strong class="language" data-lan="copyright">版权声明： </strong>
@@ -690,21 +331,17 @@ echo $SOFTA_HOME
   </ul>
   <div class="tags">
     
-      <a href="https://fqj-web.github.io/tag/nAh6_wabP/"># linux运维</a>
+      <a href="https://fqj-web.github.io/tag/sn62Xc-4C/"># Windows优化与设置</a>
     
   </div>
   <div class="nav">
     <div class="nav-prev">
       
-        <i class="fa fa-chevron-left"></i>
-        <a class="nav-pc-next" title="禁用IPv6" href="https://fqj-web.github.io/post/jin-yong-ipv6/">禁用IPv6</a class="nav-pc-next">
-        <a class="nav-mobile-prev" title="禁用IPv6" href="https://fqj-web.github.io/post/jin-yong-ipv6/">上一篇</a>
-      
     </div>
     <div class="nav-next">
       
-        <a class="nav-pc-next" title="Nginx学习整理" href="https://fqj-web.github.io/post/nginx-xue-xi-zheng-li/">Nginx学习整理</a>
-        <a class="nav-mobile-next" title="Nginx学习整理" href="https://fqj-web.github.io/post/nginx-xue-xi-zheng-li/">下一篇</a>
+        <a class="nav-pc-next" title="Github访问加速免费方式" href="https://fqj-web.github.io/post/github-fang-wen-jia-su-mian-fei-fang-shi/">Github访问加速免费方式</a>
+        <a class="nav-mobile-next" title="Github访问加速免费方式" href="https://fqj-web.github.io/post/github-fang-wen-jia-su-mian-fei-fang-shi/">下一篇</a>
         <i class="fa fa-chevron-right"></i>
       
     </div>
