@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-04-26T03:30:42.710Z</updated>
+    <updated>2021-05-13T03:35:21.979Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
@@ -10,6 +10,13 @@
     <logo>https://fqj-web.github.io/images/avatar.png</logo>
     <icon>https://fqj-web.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 飞琼君·WebOS</rights>
+    <entry>
+        <title type="html"><![CDATA[通过软路由上网的方式总结与配置]]></title>
+        <id>https://fqj-web.github.io/post/tong-guo-ruan-lu-you-shang-wang-de-fang-shi-zong-jie-yu-pei-zhi/</id>
+        <link href="https://fqj-web.github.io/post/tong-guo-ruan-lu-you-shang-wang-de-fang-shi-zong-jie-yu-pei-zhi/">
+        </link>
+        <updated>2021-05-11T13:36:12.000Z</updated>
+    </entry>
     <entry>
         <title type="html"><![CDATA[windows修改远程桌面RDP端口]]></title>
         <id>https://fqj-web.github.io/post/windows-xiu-gai-yuan-cheng-zhuo-mian-rdp-duan-kou/</id>
@@ -37,12 +44,5 @@
         <link href="https://fqj-web.github.io/post/hcie_20210414_-shen-zhen-mian-shi/">
         </link>
         <updated>2021-04-14T03:30:04.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[面试题目补充]]></title>
-        <id>https://fqj-web.github.io/post/lab-he-zhui-wen-bu-chong/</id>
-        <link href="https://fqj-web.github.io/post/lab-he-zhui-wen-bu-chong/">
-        </link>
-        <updated>2021-03-07T06:13:42.000Z</updated>
     </entry>
 </feed>

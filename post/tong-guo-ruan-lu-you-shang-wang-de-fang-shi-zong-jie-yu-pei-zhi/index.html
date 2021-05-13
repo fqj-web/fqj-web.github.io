@@ -8,7 +8,7 @@
 <meta name="keywords" content="飞琼君·个人博客">
 <meta name="description" content="未经他人苦，莫劝他人善。\n轻诺必寡信，多易必多难。">
 <meta name="theme-color" content="#000">
-<title>06_zabbix4-4版本编译安装 | 飞琼君·WebOS</title>
+<title>通过软路由上网的方式总结与配置 | 飞琼君·WebOS</title>
 <link rel="shortcut icon" href="/favicon.ico?v=1620876898565">
 <link rel="stylesheet" href="/media/css/gemini.css">
 <link rel="stylesheet" href="/media/fonts/font-awesome.css">
@@ -48,8 +48,8 @@
 </script>
 
 
-  <meta name="description" content="06_zabbix4-4版本编译安装" />
-  <meta name="keywords" content="zabbix学习" />
+  <meta name="description" content="通过软路由上网的方式总结与配置" />
+  <meta name="keywords" content="软路由" />
 </head>
 
 <body>
@@ -180,30 +180,18 @@
   <div class="toc-wrapper auto-number no_compress"
     id="toc_wrapper">
     <ul class="markdownIt-TOC">
-<li>
+<li><a href="#%E7%AE%80%E4%BB%8B">简介</a></li>
+<li><a href="#%E4%B8%8A%E7%BD%91%E4%B8%8E%E9%85%8D%E7%BD%AE">上网与配置</a>
 <ul>
-<li>
+<li><a href="#1-%E7%89%A9%E7%90%86%E6%9C%BA%E8%BD%AF%E8%B7%AF%E7%94%B1">1. 物理机软路由</a>
 <ul>
-<li><a href="#zabbix%E7%9A%84%E9%83%A8%E7%BD%B2%E5%8E%9F%E7%90%86">zabbix的部署原理</a></li>
-<li><a href="#zabbix-server%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85">zabbix server编译安装</a></li>
-<li><a href="#%E7%BC%96%E8%AF%91%E8%AF%B4%E6%98%8E">编译说明</a></li>
-<li><a href="#zabbix-server%E7%9A%84%E5%AE%89%E8%A3%85%E9%AA%8C%E8%AF%81">zabbix server的安装验证</a>
-<ul>
-<li><a href="#%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E8%AE%BE%E7%BD%AE">环境变量设置</a></li>
-<li><a href="#%E6%9F%A5%E7%9C%8B%E7%89%88%E6%9C%AC">查看版本</a></li>
+<li><a href="#1-%E7%9B%B4%E9%80%9A%E8%B7%AF%E7%94%B1">1. 直通路由</a></li>
+<li><a href="#2-%E6%97%81%E8%B7%AF%E7%94%B1">2. 旁路由</a></li>
 </ul>
 </li>
-<li><a href="#zabbix-server%E7%9A%84%E5%90%AF%E5%8A%A8">zabbix server的启动</a></li>
-<li><a href="#%E9%AA%8C%E8%AF%81">验证</a></li>
-<li><a href="#zabbix-web%E5%AE%89%E8%A3%85">zabbix web安装</a></li>
-<li><a href="#zabbix-web%E7%9A%84%E9%85%8D%E7%BD%AE">zabbix web的配置</a>
-<ul>
-<li><a href="#php%E9%85%8D%E7%BD%AE">php配置</a></li>
-<li><a href="#%E7%99%BB%E5%BD%95">登录</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li><a href="#2-%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%BD%AF%E8%B7%AF%E7%94%B1">2. 虚拟机软路由</a></li>
+<li><a href="#1-%E7%9B%B4%E9%80%9A%E8%B7%AF%E7%94%B1%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%BD%AF%E8%B7%AF%E7%94%B1%E6%8E%A5%E7%AE%A1%E7%BD%91%E5%8D%A1">1. （直通路由）虚拟机软路由接管网卡</a></li>
+<li><a href="#2-%E6%97%81%E8%B7%AF%E7%94%B1%E7%89%A9%E7%90%86%E6%9C%BA%E5%8F%AF%E4%BB%A5%E9%80%9A%E8%BF%87%E7%BD%91%E5%8D%A1%E7%9B%B4%E6%8E%A5%E4%B8%8A%E7%BD%91">2. （旁路由）物理机可以通过网卡直接上网</a></li>
 </ul>
 </li>
 </ul>
@@ -471,8 +459,8 @@
           <div class="section bg-color post post-page">
             <section class="post-header">
   <h1 class="post-title">
-    <a class="post-title-link" href="https://fqj-web.github.io/post/06_zabbix4-4-ban-ben-bian-yi-an-zhuang/">
-      06_zabbix4-4版本编译安装
+    <a class="post-title-link" href="https://fqj-web.github.io/post/tong-guo-ruan-lu-you-shang-wang-de-fang-shi-zong-jie-yu-pei-zhi/">
+      通过软路由上网的方式总结与配置
     </a>
   </h1>
   <div class="post-meta">
@@ -480,7 +468,7 @@
     <span class="meta-item pc-show">
       <i class="fa fa-calendar-o"></i>
       <span class="language" data-lan="publish">发布于</span>
-      <span class="publish-time" data-t="2020-04-02 00:04:28">2020-04-02</span>
+      <span class="publish-time" data-t="2021-05-11 21:36:12">2021-05-11</span>
       <span class="post-meta-divider pc-show">|</span>
     </span>
     
@@ -489,8 +477,8 @@
       <span class="pc-show language" data-lan="category-in">分类于</span>
       
       
-      <a href="https://fqj-web.github.io/tag/9PNZwGqRR/">
-        <span>zabbix学习</span>
+      <a href="https://fqj-web.github.io/tag/ruan-lu-you/">
+        <span>软路由</span>
       </a>
       
       
@@ -499,137 +487,60 @@
     
     <span class="meta-item">
       <i class="fa fa-clock-o"></i>
-      <span>4<span class="language" data-lan="minute">分钟</span></span>
+      <span>6<span class="language" data-lan="minute">分钟</span></span>
     </span>
     <span class="meta-item">
       <span class="post-meta-divider">|</span>
       <i class="fa fa-file-word-o"></i>
-      <span>632<span class="pc-show language" data-lan="words">字数</span></span>
+      <span>1610<span class="pc-show language" data-lan="words">字数</span></span>
     </span>
     
   </div>
 </section>
             <div class="post-body next-md-body" id="post_body">
-              <h3 id="zabbix的部署原理">zabbix的部署原理</h3>
+              <h1 id="简介">简介</h1>
+<p>在某些场景下需要对网络流量进行限制或者对网速进行分配，亦或者需要看看外面的世界等等，为了实现这些需求，可采用软路由的方式。<br>
+软路由硬件的选择可根据资金情况与实际需求，可以选择树莓派、香橙派、香蕉派等开发板，也可以选择极路由、竞斗云等矿渣产物，当然也可以选择x86架构的迷你主机，例如占美、倍控、康耐信、研域工控等等。<br>
+对于软路由系统的选择也很多，但是好用的不多，下面推荐一下最常用的几个系统。最容上手的的上爱快iKuai系统，iKuai也有相应的硬件，可以直接买整机。扩展最丰富，也能实现一些特殊需求的是openwrt，插件极其丰富，可以很方便的看到外面的花花大世界。除了上面两个，还有pfsence（防火墙能力很强）和ROS，这两个前者汉化不是很好，后者上手有些难度。当然还有其他的软路由系统，建议选择这爱快或者openwrt，因为这两个系统有很好的社区支持，并且免费，更新比较及时。<br>
+软路由系统安装分为两种方式，一种是使用u盘安装iso镜像文件，另一种是直接写盘的img文件，其中openwrt目前大部分是img文件，当然可以自行编译，而爱快系统官网既有iso文件，也有img文件，除此之外还有ghost文件，可根据文件类型选择安装方式。<br>
+安装完系统之后就是配置软路由，实现用户上网行为的控制等等，下面介绍一下PC通过软路由上网的几种方式与配置方法：</p>
+<h1 id="上网与配置">上网与配置</h1>
+<h2 id="1-物理机软路由">1. 物理机软路由</h2>
+<p>直通路由和旁路由的本质区别是软路由接不接管网关的功能，即软路由开不开启DHCP服务</p>
+<h3 id="1-直通路由">1. 直通路由</h3>
+<p>此种场景下所有的流量都走软路由，方便对所有的流量进行控制，当然这也会对软路由设备的处理能力有一定的要求，此种情况需要一定的资金购买相应的设备，适合长久使用。<br>
+<img src="https://fqj-web.github.io/post-images/1620741680331.png" alt="WAN和LAN口物理隔离" loading="lazy"><br>
+此种情况下主要是配置WAN口，具体配置如下：<br>
+如果使用的是光猫，建议在软路由的WAN口上进行PPPoE拨号，同时在WAN口上开启DHCP功能，负责给接入LAN口的PC自动分配IP，实现PC访问互联网；<br>
+如果使用的是路由器，建议在路由器上拨号，然后关闭路由器的DHCP功能，在软路由的WAN口上配置对应的静态IP实现访问互联网，同是开启DHCP功能，负责给接入LAN口的PC分配IP。</p>
+<h3 id="2-旁路由">2. 旁路由</h3>
+<p>此场景下如果全部流量都走软路由会造成网速过慢，或者路由器转发压力过大等问题，采用此种组网方式也有一定的好处，可以利用旧设备，例如不用的PC或者树莓派等，只有一个网口，可以只处理部分流量，例如访问百度等可以直接走路由器，而访问谷歌等则经过软路由，即只处理部分流量。<br>
+此种方法更加<strong>隐蔽</strong>，如果不进行配置，流量默认直接走路由器，只有通过特殊配置<sub>需要知道软路由的IP</sub>才能通过软路由来上网<br>
+<img src="https://fqj-web.github.io/post-images/1620742439752.png" alt="旁路由" loading="lazy"><br>
+旁路由不需要WAN口，如果软路由中有WAN口，则需要删除，同时配置完LAN口的静态IP之后，无需开启DHCP功能。<br>
+PC的流量如果需要走旁路由进行上网时，则PC需要设置静态IP，其中网关和DNS必须设置为软路由的IP。</p>
+<h2 id="2-虚拟机软路由">2. 虚拟机软路由</h2>
+<figure data-type="image" tabindex="1"><img src="https://fqj-web.github.io/post-images/1620742897528.png" alt="虚拟机软路由接管网卡" loading="lazy"></figure>
+<h2 id="1-直通路由虚拟机软路由接管网卡">1. （直通路由）虚拟机软路由接管网卡</h2>
+<p>此种情况下和物理机软路由中的<strong>WAN和LAN口物理隔离</strong>的场景原理类似，只是实现方式有所区别。此时物理机无法通过物理网卡上网，而是通过VM中的虚拟软路由系统的虚拟网卡来上网。</p>
+<p><strong>虚拟机软件VMware配置有两处</strong>，均是在<code>虚拟网络编辑器</code>中：</p>
 <ol>
-<li>zabbix server需要把监控数据入sql数据库，所以需要mysql环境</li>
-<li>zabbix的web是基于php开发的，所以需要lnmp环境</li>
-<li>部署zabbix server和zabbix web</li>
+<li>在VMnet0的<code>桥接模式</code>中，选择物理机上刚才取消掉IPv4和IPv6的物理网卡，从而实现让虚拟软路由系统完全接管物理网卡的目的<code>这个虚拟软路由系统的WAN口使用的网卡</code></li>
+<li>在VMnet8的<code>NAT模式</code>中，首先需要取消勾选<code>使用本地DHCP服务将IP地址分配给虚拟器</code>，如果使用虚拟机上网，这项可保留。然后设置子网IP，最后根据子网IP的设置进行NAT设置<code>这是虚拟软路由系统LAN口使用的网卡</code></li>
 </ol>
-<h3 id="zabbix-server编译安装">zabbix server编译安装</h3>
-<p><code>server端加参数--enable-agent主要是为了使用工具zabbix_get</code></p>
-<pre><code class="language-shell">yum install -y libevent-devel wget tar gcc gcc-c++ make net-snmp-devel libxml2-devel libcurl-devel 
-useradd -s /sbin/nologin zabbix
-cd /usr/local/src/
-wget &quot;https://nchc.dl.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/4.4.4/zabbix-4.4.4.tar.gz&quot;
-tar -zxvf zabbix-4.4.4.tar.gz
-cd zabbix-4.4.4
-./configure --prefix=/usr/local/zabbix --enable-server --enable-agent --with-mysql=/usr/local/mysql/bin/mysql_config --with-net-snmp --with-libcurl --with-libxml2
-make &amp;&amp; make install
-</code></pre>
-<h3 id="编译说明">编译说明</h3>
+<p><strong>物理机配置也有两处</strong>：</p>
 <ol>
-<li>--prefix 指定安装目录</li>
-<li>--enable-server 安装zabbix server</li>
-<li>--enable-agent 安装zabbix agent</li>
-<li>--with-mysql 用mysql来存储（如果使用yum安装，则不需要后面的mysql的路径）</li>
+<li>物理网卡的属性中要取消勾选<code>Internet协议版本 4（TCP/IPv4）</code>和<code>Internet协议版本 6（TCP/IPv6）</code></li>
+<li>虚拟网卡，即VMnet8对应的网卡<code>VMware Network Adapter VMnet8</code>中需要根据VMnet8的<code>NAT模式</code>的配置的网段进行IP地址等参数的设置，设置完之后ping一下网关是否可以通信</li>
 </ol>
-<h3 id="zabbix-server的安装验证">zabbix server的安装验证</h3>
-<h4 id="环境变量设置">环境变量设置</h4>
-<pre><code class="language-shell">echo &quot;export PATH=\$PATH:/usr/local/zabbix/sbin:/usr/local/zabbix/bin&quot; &gt;&gt;/etc/profile &amp;&amp; source /etc/profile
-</code></pre>
-<h4 id="查看版本">查看版本</h4>
-<pre><code class="language-shell">zabbix_server --version
-</code></pre>
-<h3 id="zabbix-server的启动">zabbix server的启动</h3>
+<p><strong>新建虚拟软路由系统之后也有两处配置</strong>：</p>
 <ol>
-<li>需要到mysql里做数据库的初始化</li>
+<li>新建虚拟机过程中需要添加两块网卡，一块是虚拟软路由系统的WAN口对应的网卡，即选择桥接模式；另一块是虚拟软路由系统的LAN口对应的网卡，即选择NAT模式</li>
+<li>进去虚拟软路由系统之后，WAN口的配置和<strong>WAN和LAN口物理隔离</strong>中的配置类似，可以直接PPPoE拨号上网，也可以上级路由器拨号之后使用静态IP上网</li>
 </ol>
-<pre><code class="language-shell">#mysql数据库初始化
-mysql -h 127.0.0.1 -uroot -pzabbixpwd -A
-  create database zabbix character set utf8 collate utf8_bin;
-  grant all privileges on zabbix.* to zabbix@'127.0.0.1' identified by 'zabbixpwd';
-  flush privileges;
-  set names utf8;
-  use zabbix;
-  source /usr/local/src/zabbix-4.4.4/database/mysql/schema.sql;
-  source /usr/local/src/zabbix-4.4.4/database/mysql/data.sql;
-  source /usr/local/src/zabbix-4.4.4/database/mysql/images.sql;
-</code></pre>
-<ol start="2">
-<li>配置zabbix server</li>
-</ol>
-<pre><code class="language-shell"># 配置文件/usr/local/zabbix/etc/zabbix_server.conf
-cat &gt;/usr/local/zabbix/etc/zabbix_server.conf &lt;&lt;EOF
-LogFile=/usr/local/zabbix/zabbix_server.log
-DBHost=127.0.0.1
-DBName=zabbix
-DBUser=zabbix
-DBPassword=zabbixpwd
-DBPort=3306
-Timeout=30
-AlertScriptsPath=/usr/local/zabbix/alertscripts #配置告警脚本
-ExternalScripts=/usr/local/zabbix/externalscripts
-LogSlowQueries=3000 #慢查询
-# SourceIP= 192.168.x.x     #监听地址
-EOF
-</code></pre>
-<ol start="3">
-<li>启动zabbix server</li>
-</ol>
-<pre><code class="language-shell">chown zabbix:zabbix -R /usr/local/zabbix/
-zabbix_server
-</code></pre>
-<h3 id="验证">验证</h3>
-<ol>
-<li>进程 ps auxf | grep zabbix_server</li>
-<li>端口 netstat -tulnp|grep zabbix</li>
-<li>日志 tail -f /usr/local/zabbix/zabbix_server.log</li>
-</ol>
-<h3 id="zabbix-web安装">zabbix web安装</h3>
-<pre><code class="language-shell">mkdir /usr/local/nginx/html/zabbix
-cp -a /usr/local/src/zabbix-4.4.4/frontends/php/* /usr/local/nginx/html/zabbix
-</code></pre>
-<h3 id="zabbix-web的配置">zabbix web的配置</h3>
-<h4 id="php配置">php配置</h4>
-<pre><code class="language-shell"># 配置文件/usr/local/php/etc/php.ini
-post_max_size = 32M
-max_execution_time = 360
-max_input_time = 360
-date.timezone = Asia/Shanghai
-always_populate_raw_post_data = -1
-</code></pre>
-<pre><code class="language-shell">#重启php-fpm：
-systemctl restart php-fpm
-</code></pre>
-<h4 id="登录">登录</h4>
-<ol>
-<li>初始化配置：http://zabbix服务器IP/zabbix</li>
-</ol>
-<pre><code>Database type:MySQL
-Database host:127.0.0.1
-Database port:3306
-Database name:zabbix
-User:zabbix
-Password:zabbixpwd
-下载配置文件，保存在/usr/local/nginx/html/zabbix/conf/zabbix.conf.php
-</code></pre>
-<ol start="2">
-<li>默认用户名密码：Admin zabbix</li>
-<li>禁用Zabbix server主机的监控</li>
-</ol>
-<blockquote>
-<p>Hosts--&gt;选中zabbix server --&gt;点击disable</p>
-</blockquote>
-<ol start="4">
-<li>禁用guest用户（只能设置用户组权限）</li>
-</ol>
-<blockquote>
-<p>Administration--&gt;Users groups--&gt;选中Guests--&gt;disable</p>
-</blockquote>
-<ol start="5">
-<li>更改Admin的密码</li>
-</ol>
+<p>此时物理机只能通过虚拟网卡<code>VMware Network Adapter VMnet8</code>访问互联网</p>
+<h2 id="2-旁路由物理机可以通过网卡直接上网">2. （旁路由）物理机可以通过网卡直接上网</h2>
+<p>与虚拟机软路由接管网卡方式不同，此种方式和旁路由有些类似，PC的物理网卡不需要取消勾选IPV4/IPv6，即PC可通过物理网卡直接上网。同时，PC只有通过配置网关和DNS之后才能通过软路由上网。</p>
 
             </div>
             
@@ -642,7 +553,7 @@ Password:zabbixpwd
     </li>
     <li class="post-copyright-link">
       <strong class="language" data-lan="link">本文链接：</strong>
-      <a href="https://fqj-web.github.io/post/06_zabbix4-4-ban-ben-bian-yi-an-zhuang/" title="06_zabbix4-4版本编译安装">https://fqj-web.github.io/post/06_zabbix4-4-ban-ben-bian-yi-an-zhuang/</a>
+      <a href="https://fqj-web.github.io/post/tong-guo-ruan-lu-you-shang-wang-de-fang-shi-zong-jie-yu-pei-zhi/" title="通过软路由上网的方式总结与配置">https://fqj-web.github.io/post/tong-guo-ruan-lu-you-shang-wang-de-fang-shi-zong-jie-yu-pei-zhi/</a>
     </li>
     <li class="post-copyright-license">
       <strong class="language" data-lan="copyright">版权声明： </strong>
@@ -651,21 +562,17 @@ Password:zabbixpwd
   </ul>
   <div class="tags">
     
-      <a href="https://fqj-web.github.io/tag/9PNZwGqRR/"># zabbix学习</a>
+      <a href="https://fqj-web.github.io/tag/ruan-lu-you/"># 软路由</a>
     
   </div>
   <div class="nav">
     <div class="nav-prev">
       
-        <i class="fa fa-chevron-left"></i>
-        <a class="nav-pc-next" title="07_zabbix4-4网页汉化和乱码处理" href="https://fqj-web.github.io/post/07_zabbix4-4-wang-ye-han-hua-he-luan-ma-chu-li/">07_zabbix4-4网页汉化和乱码处理</a class="nav-pc-next">
-        <a class="nav-mobile-prev" title="07_zabbix4-4网页汉化和乱码处理" href="https://fqj-web.github.io/post/07_zabbix4-4-wang-ye-han-hua-he-luan-ma-chu-li/">上一篇</a>
-      
     </div>
     <div class="nav-next">
       
-        <a class="nav-pc-next" title="05_LNMP环境的验证" href="https://fqj-web.github.io/post/05_lnmp-huan-jing-de-yan-zheng/">05_LNMP环境的验证</a>
-        <a class="nav-mobile-next" title="05_LNMP环境的验证" href="https://fqj-web.github.io/post/05_lnmp-huan-jing-de-yan-zheng/">下一篇</a>
+        <a class="nav-pc-next" title="windows修改远程桌面RDP端口" href="https://fqj-web.github.io/post/windows-xiu-gai-yuan-cheng-zhuo-mian-rdp-duan-kou/">windows修改远程桌面RDP端口</a>
+        <a class="nav-mobile-next" title="windows修改远程桌面RDP端口" href="https://fqj-web.github.io/post/windows-xiu-gai-yuan-cheng-zhuo-mian-rdp-duan-kou/">下一篇</a>
         <i class="fa fa-chevron-right"></i>
       
     </div>
