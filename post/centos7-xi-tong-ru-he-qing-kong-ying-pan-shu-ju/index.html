@@ -9,7 +9,7 @@
 <meta name="description" content="飞琼君个人博客，记录日常学习笔记">
 <meta name="theme-color" content="#000">
 <title>Centos7系统如何清空硬盘数据 | 飞琼君·WebOS</title>
-<link rel="shortcut icon" href="/favicon.ico?v=1624368173679">
+<link rel="shortcut icon" href="/favicon.ico?v=1624548272887">
 <link rel="stylesheet" href="/media/css/gemini.css">
 <link rel="stylesheet" href="/media/fonts/font-awesome.css">
 <link
@@ -1023,11 +1023,13 @@ git checkout 分支名
     # 4.2 执行merge命令
     git merge 有新内容分支名
 # 5. 解决冲突
-    # 5.1 编辑文件，删除特殊符号
+    # 5.1 编辑文件，删除特殊符号：“&amp;lt;&amp;lt;&amp;lt;&amp;lt;&amp;lt;&amp;lt; HEAD”到“&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt; 被合并分支名”的部分
     # 5.2 把文件修改到满意的程度，保存退出
     # 5.3 git add 文件名
     # 5.4 git commit -m &amp;quot;日志信息&amp;quot;   【注意：commit一定不能带具体文件名】
 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;合并分支存在冲突时的表现：&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624447281763.png&#34; alt=&#34;合并分支存在冲突&#34; loading=&#34;lazy&#34;&gt;&lt;/p&gt;
 &lt;h2 id=&#34;5-实操记录&#34;&gt;5. 实操记录&lt;/h2&gt;
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 首先需要进入工作目录，例如我的工作目录为/c/gitserver，即工作区
 mkdir -p /c/gitserver &amp;amp;&amp;amp; cd /c/gitserver
@@ -1246,21 +1248,44 @@ index efbac46..7963a01 100644
 
         第3次修改的内容！
 +       测试diff
-#------------------
-
-
-# --------------
-# 命令执行结果
-
-#------------------
 &lt;/code&gt;&lt;/pre&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;git基本原理&#34;&gt;Git基本原理&lt;/h1&gt;
 &lt;h2 id=&#34;1-哈希&#34;&gt;1. 哈希&lt;/h2&gt;
+&lt;p&gt;哈希是&lt;strong&gt;一个系列的加密算法&lt;/strong&gt;，各个不同的哈希算法虽然加密强度不同，但是有以下几个共同点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;不管输入数据的数据量有多大，输入同一个哈希算法，得到的加密结果长度固定&lt;/li&gt;
+&lt;li&gt;哈希算法确定，输入数据确定，输出数据能够保证不变；输入数据有变化，输出数据一定有变化&lt;/li&gt;
+&lt;li&gt;哈希算法不可逆&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Git底层采用的是SHA-1算法，哈希算法可以被用来验证文件（Git就是靠这种机制来从根本上保证数据完整性的），原理如下：&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624454941679.png&#34; alt=&#34;哈希&#34; loading=&#34;lazy&#34;&gt;&lt;/p&gt;
 &lt;h2 id=&#34;2-git保存版本的机制&#34;&gt;2. Git保存版本的机制&lt;/h2&gt;
+&lt;h3 id=&#34;git的文件管理机制&#34;&gt;Git的文件管理机制&lt;/h3&gt;
+&lt;p&gt;Git把数据看作是小型文件系统的一组快照。每次提交更新时，Git都会对当前的全部文件制作一个快照并保存这个快照的索引。为了高效，如果文件没有修改，Git不再重新存储该文件，而是只保留一个链接指向之前存储的文件，所以Git的工作方式可以称之为&lt;strong&gt;快照流&lt;/strong&gt;&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624455150405.png&#34; alt=&#34;Git的文件管理机制&#34; loading=&#34;lazy&#34;&gt;&lt;/p&gt;
+&lt;h4 id=&#34;git文件管理机制细节&#34;&gt;Git文件管理机制细节&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;Git的提交对象&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624455352371.png&#34; alt=&#34;Git的提交对象&#34; loading=&#34;lazy&#34;&gt;&lt;/li&gt;
+&lt;li&gt;提交对象及其父对象形成的链条&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624455391037.png&#34; alt=&#34;提交对象及其父对象形成的链条&#34; loading=&#34;lazy&#34;&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;集中式版本控制工具例如svn的文件管理机制&#34;&gt;集中式版本控制工具（例如SVN）的文件管理机制&lt;/h3&gt;
+&lt;p&gt;以文件变更列表的方式存储信息。这类系统将它们保存的信息看作是一组基本文件和每个文件随时间逐步累积的差异&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624455466454.png&#34; alt=&#34;集中式版本控制工具&#34; loading=&#34;lazy&#34;&gt;&lt;/p&gt;
 &lt;h2 id=&#34;3-git分支管理机制&#34;&gt;3. Git分支管理机制&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;分支的创建&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624458810637.png&#34; alt=&#34;分支的创建&#34; loading=&#34;lazy&#34;&gt;&lt;/li&gt;
+&lt;li&gt;分支的切换&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624458953170.png&#34; alt=&#34;分支的切换&#34; loading=&#34;lazy&#34;&gt;&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624459046714.png&#34; alt=&#34;testingcommit&#34; loading=&#34;lazy&#34;&gt;&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1624459183192.png&#34; alt=&#34;mastercommit&#34; loading=&#34;lazy&#34;&gt;&lt;/li&gt;
+&lt;/ol&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;github&#34;&gt;GitHub&lt;/h1&gt;
+&lt;p&gt;github创建账号时，尽量不要使用163的邮箱，因为163的邮箱有时候收不到github的邮件&lt;/p&gt;
 &lt;h2 id=&#34;1-账号信息&#34;&gt;1. 账号信息&lt;/h2&gt;
 &lt;h2 id=&#34;2-创建远程库&#34;&gt;2. 创建远程库&lt;/h2&gt;
 &lt;ol&gt;
@@ -1290,6 +1315,167 @@ index efbac46..7963a01 100644
 &lt;hr&gt;
 &lt;h1 id=&#34;gitlab服务器搭建&#34;&gt;GitLab服务器搭建&lt;/h1&gt;
 ">Git和Github</a>
+      </div>
+      
+      <div class="item">
+        <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/python-ha-xi/"" data-c="
+          &lt;p&gt;python中计算哈希值主要包含两个模块，crypt（不常用）和hashlib（常用），在工作过程中，经常使用计算哈希值的方式校验文件的完整性或者对文件的加解密等&lt;/p&gt;
+&lt;h1 id=&#34;模块介绍&#34;&gt;模块介绍&lt;/h1&gt;
+&lt;h2 id=&#34;crypt模块&#34;&gt;crypt模块&lt;/h2&gt;
+&lt;h3 id=&#34;主要方法和常量&#34;&gt;主要方法和常量&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;方法
+&lt;ol&gt;
+&lt;li&gt;crypt(…)：对指定内容进行hash加密&lt;/li&gt;
+&lt;li&gt;methods(…)：返回可用加密算法的列表&lt;/li&gt;
+&lt;li&gt;mksalt(…)：根据加密算法生成salt&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;常量
+&lt;ol&gt;
+&lt;li&gt;METHOD_MD5：md5加密算法&lt;/li&gt;
+&lt;li&gt;METHOD_CRYPT&lt;/li&gt;
+&lt;li&gt;METHOD_BLOWFISH（python3.7增加）&lt;/li&gt;
+&lt;li&gt;METHOD_SHA256：sha256加密算法&lt;/li&gt;
+&lt;li&gt;METHOD_SHA512（最强）：sha512加密算法&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;使用方法&#34;&gt;使用方法&lt;/h3&gt;
+&lt;p&gt;使用crypt.crypt(…)进行hash加密的时候，需要提供二个参数： 加密内容和salt，如果不特别指定salt，系统就会调用crypt.mksalt(…)生成一个salt，如果想要以特定的加密算法生成salt，则使用以下方式：&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;import crypt
+
+salt=crypt.mksalt(crypt.METHOD_MD5)
+hashstr=crypt.crypt(&amp;quot;need hash value&amp;quot;,salt)
+print(hashstr)
+
+# $1$P2dUkaFr$NVqTeHPko6M7gMSlpaeKv.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;hashlib&#34;&gt;hashlib&lt;/h2&gt;
+&lt;h3 id=&#34;主要方法&#34;&gt;主要方法&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;md5(…)：利用md5算法加密&lt;/li&gt;
+&lt;li&gt;sha1(…)：利用sha1算法加密&lt;/li&gt;
+&lt;li&gt;sha224(…)：利用sha224算法加密&lt;/li&gt;
+&lt;li&gt;sha256(…)：利用sha256算法加密&lt;/li&gt;
+&lt;li&gt;sha384(…)：利用sha384算法加密&lt;/li&gt;
+&lt;li&gt;sha512(…)：利用sha512算法加密&lt;/li&gt;
+&lt;li&gt;update(arg)：可以重复利用指定了特殊加密算法的Hash对象，对arg进行加密&lt;code&gt;用于逐段读取大文件时，实现对整个大文件的哈希计算&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;digest(…)：以字符形式返回加密内容&lt;/li&gt;
+&lt;li&gt;hexdigest(…)：以16进制形式返回加密内容&lt;/li&gt;
+&lt;li&gt;copy(…)：为了达到重复利用Hash对象的目的，而克隆Hash对象&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;使用方法-2&#34;&gt;使用方法&lt;/h3&gt;
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;import hashlib
+
+m = hashlib.md5()
+m.update(&amp;quot;need hash value&amp;quot;.encode(&#39;utf-8&#39;))
+mdig=m.digest()
+mhex=m.hexdigest()
+print(mdig)
+print(mhex)
+
+# b&#39;\x05\xb4D\x84\xe6\xcde\xdd\xc1|\xa0T\x80*\xd6\x0b&#39;
+# 05b44484e6cd65ddc17ca054802ad60b
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;计算文件的哈希&#34;&gt;计算文件的哈希&lt;/h1&gt;
+&lt;p&gt;MD5是一种消息摘要算法，用于从可变输入数据中创建唯一的固定大小值。MD5通常用于检查文件在传输过程中是否损坏（在这种情况下，哈希值称为校验和），文件中的任何更改都将导致不同的MD5哈希值&lt;/p&gt;
+&lt;h2 id=&#34;小文件的md5哈希值&#34;&gt;小文件的MD5哈希值&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;import hashlib
+ 
+filename=input(&amp;quot;输入文件: &amp;quot;)
+with open(filename,&amp;quot;rb&amp;quot;) as f:
+    bytes=f.read() # 将文件一次性读入内存
+    readable_hash=hashlib.md5(bytes).hexdigest()
+    print(readable_hash)
+    readable_hash=hashlib.sha1(bytes).hexdigest()
+    print(readable_hash)
+
+
+# 输入文件: D:\VM\cn_windows_server_2016_x64_dvd_9718765.iso
+# 4f1e348b1333a19169f16145635c36c1
+# 6ae9ce84c9a97cfa55372b2892903a214062d5e5
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;由于在计算MD5哈希值之前将整个文件读取到内存中，上述代码对于大型输入文件可能会失败&lt;/p&gt;
+&lt;h2 id=&#34;大文件的md5哈希值&#34;&gt;大文件的MD5哈希值&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;import hashlib
+ 
+filename=input(&amp;quot;输入文件: &amp;quot;)
+md5_hash=hashlib.md5()
+with open(filename,&amp;quot;rb&amp;quot;) as f:
+    for byte_block in iter(lambda: f.read(4096),b&amp;quot;&amp;quot;):  # 每次读入4K
+        md5_hash.update(byte_block)
+    print(md5_hash.hexdigest())
+
+# 输入文件: D:\VM\cn_windows_server_2016_x64_dvd_9718765.iso
+# 4f1e348b1333a19169f16145635c36c1
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;调用7zip来计算哈希值&#34;&gt;调用7zip来计算哈希值&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;使用该方法之前需要先将7zip安装目录添加到环境变量中&lt;/code&gt;&lt;br&gt;
+如果为了大文件传输前后的哈希值，需要较快的计算出哈希值，此时python自带的模块可能在速度上来不及，可以使用7zip的命令行工具&lt;br&gt;
+语法格式：&lt;code&gt;7z h [-scrc{Method}] [files]&lt;/code&gt;，&lt;code&gt;-scrc&lt;/code&gt;参数指定计算的方法，支持的方法有CRC32、CRC64、SHA1、SHA256，默认是CRC32&lt;code&gt;7zip不支持MD5，可以使用SHA1&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;import os,re
+
+filename=input(&amp;quot;输入文件: &amp;quot;)
+readable_hash=os.popen(f&amp;quot;7z h -scrcSHA1 \&amp;quot;{filename}\&amp;quot;&amp;quot;).read()
+# 用正则匹配提取SHA1哈希值，其他算法不能使用此方法提取，可根据返回值进行适当调整
+res=re.findall(&amp;quot;[0123456789ABCDEF]{40}&amp;quot;,readable_hash)[0]
+print(res)
+
+# 输入文件: D:\VM\cn_windows_server_2016_x64_dvd_9718765.iso
+# 6AE9CE84C9A97CFA55372B2892903A214062D5E5
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;调用hashmyfiles来计算哈希值&#34;&gt;调用HashMyFiles来计算哈希值&lt;/h2&gt;
+&lt;p&gt;除此之外，还可以使用调用HashMyFiles来实现计算hash值，此工具也有命令行模式，且支持的哈希算法更全面&lt;br&gt;
+下载网站和命令行使用方法参考：&lt;a href=&#34;http://www.nirsoft.net/utils/hash_my_files.html&#34;&gt;http://www.nirsoft.net/utils/hash_my_files.html&lt;/a&gt;&lt;/p&gt;
+">python 哈希</a>
+      </div>
+      
+      <div class="item">
+        <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/qun-hui-duo-she-bei-zhi-jian-tong-bu-andhuo-qu-root-quan-xian-andxi-tong-ban-ben-jiang-ji/"" data-c="
+          &lt;p&gt;最近将群晖DSM系统由6.2.4升级为7.0之后，发现两个问题，一个是速度变慢，包括访问速度、同步速度等等，二是存在bug，例如有时无法使用qc、硬盘无法休眠等。&lt;br&gt;
+将系统由7.0降为6.2.4，官方是不支持的，那么需要自己设置。&lt;/p&gt;
+&lt;h1 id=&#34;多设备之间同步&#34;&gt;多设备之间同步&lt;/h1&gt;
+&lt;p&gt;为了防止在系统降级过程中发生无可挽回的数据损失等现象，需要在降级之前先将数据进行备份。&lt;br&gt;
+备份的方式有以下几种：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;使用USB，将群晖的数据备份到移动硬盘中&lt;/li&gt;
+&lt;li&gt;使用rsync，将群晖的数据备份到云环境中&lt;/li&gt;
+&lt;li&gt;使用自带的套件Hyper Backup，将群晖的数据备份到另外一台群晖设备中（这个套件可以使用多种备份方式）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;因为自家还有一台更高端且空间足够大的群晖，所以选择方案3，将此群晖的所有数据备份到另外一台群晖中，其中设置可以按照套件的指示一步一步的进行。&lt;/p&gt;
+&lt;h1 id=&#34;获取root权限&#34;&gt;获取root权限&lt;/h1&gt;
+&lt;p&gt;这里只是介绍如何临时获取root权限，不建议永久获取root权限，风险过高。获取步骤如下：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;控制面板--终端机和SNMP--终端机--启用Telnet功能或者启用SSH功能&lt;code&gt;如果想使用rsync功能，必须开启ssh&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;根据上一步启用的功能，使用ssh或者telnet连接群晖，使用admin账户&lt;/li&gt;
+&lt;li&gt;连接成功之后，在终端中输入&lt;code&gt;sudo -i&lt;/code&gt;，然后输入admin的密码，获取root权限&lt;code&gt;这是临时获取，想要永久获取，可在临时获取root权限之后修改root密码&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;版本降级&#34;&gt;版本降级&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;主要是修改系统版本的配置文件&lt;code&gt;/etc.defaults/VERSION&lt;/code&gt;，修改之后的内容如下：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt; vi /etc.defaults/VERSION
+ 	majorversion=&amp;quot;6&amp;quot;
+	minorversion=&amp;quot;2&amp;quot;
+	major=&amp;quot;6&amp;quot;
+	minor=&amp;quot;2&amp;quot;
+	micro=&amp;quot;4&amp;quot;
+	productversion=&amp;quot;6.2.4&amp;quot;
+	buildphase=&amp;quot;GM&amp;quot;
+	buildnumber=&amp;quot;25556&amp;quot;
+	smallfixnumber=&amp;quot;0&amp;quot;
+	nano=&amp;quot;0&amp;quot;
+	base=&amp;quot;25556&amp;quot;
+	builddate=&amp;quot;2021/03/04&amp;quot;
+	buildtime=&amp;quot;19:34:48&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;去群晖官网下载相应群晖型号的DSM6.2.4版本安装包到电脑上&lt;/li&gt;
+&lt;li&gt;重启群晖，在电脑上用Synology Assistant 搜索，此时会提示安装系统，手动上传DSM6.2.4安装包进行安装，&lt;strong&gt;但安装过程会报错&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;别担心，再次重复第1点（修改配置文件），但要用telnet登录，用户名：root，密码：101-0101，改好文件以后用群晖助手搜索&lt;code&gt;重复第1步是用root账户和密码登录telnet，然后用 vi /etc.defaults/VERSION命令修改上面的配置文件然后保存，千万别重启，重启又会报错&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+">群晖 多设备之间同步&获取root权限&系统版本降级</a>
       </div>
       
       <div class="item">
@@ -14271,82 +14457,82 @@ VxLAN在支持SDN，多租户等方面能力更强，因此成为业界的技术
         <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/xue-xi-shun-xu/"" data-c="
           &lt;h1 id=&#34;1-lab题-20161111&#34;&gt;1. LAB题-2016.11.11&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2318947&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2318947&#34;&gt; 01. LAB面试题讲解第一天-1【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2854698&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2854698&#34;&gt; 02. LAB面试题讲解第一天-2【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6105189&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6105189&#34;&gt; 03. LAB面试题讲解第二天-1【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2827748&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2827748&#34;&gt; 04. LAB面试题讲解第二天-2【2021.01.16】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2230074&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2230074&#34;&gt; 05. LAB面试题讲解第三天【2021.01.16】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-331688&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-331688&#34;&gt; 01. LAB面试题讲解第一天-1【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2487753&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2487753&#34;&gt; 02. LAB面试题讲解第一天-2【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3984725&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3984725&#34;&gt; 03. LAB面试题讲解第二天-1【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6436169&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6436169&#34;&gt; 04. LAB面试题讲解第二天-2【2021.01.16】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4139257&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4139257&#34;&gt; 05. LAB面试题讲解第三天【2021.01.16】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;2-乾颐堂技术茶话会-最后&#34;&gt;2. 乾颐堂技术茶话会-最后&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3022452&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3022452&#34;&gt; 乾颐堂安德技术大咖茶话会-HCIEv3.0-2019.4考试新动态1【2021.01.14】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2536657&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2536657&#34;&gt; Pv4向IPv6过渡技术【2021.01.14】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1253107&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1253107&#34;&gt; VXALN【2021.01.15】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9035678&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9035678&#34;&gt; 乾颐堂安德技术大咖茶话会-HCIEv3.0-2019.4考试新动态1【2021.01.14】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7476922&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7476922&#34;&gt; Pv4向IPv6过渡技术【2021.01.14】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-555221&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-555221&#34;&gt; VXALN【2021.01.15】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;hr&gt;
 &lt;p&gt;&lt;strong&gt;以下为面试重点内容&lt;/strong&gt;&lt;/p&gt;
 &lt;h1 id=&#34;3-二层协议-20161115&#34;&gt;3. 二层协议-2016.11.15&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8464656&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8464656&#34;&gt; 06. 二层协议第一天：STP和RSTP区别-1【2021.01.17】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3039484&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3039484&#34;&gt; 07. 二层协议第二天：STP和RSTP区别-2【2021.01.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3524224&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3524224&#34;&gt; 08. 二层协议第二天：STP和RSTP区别-3【2021.01.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6950001&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6950001&#34;&gt; 09. 二层协议第三天：MSTP【2021.01.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9816554&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9816554&#34;&gt; 10. 二层协议第三天：VLAN特性【2021.01.20】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7699710&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7699710&#34;&gt; 11. 二层协议第四天：Super VLAN&amp;MUX VLAN&amp;Smart-link【2021.01.21】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5968290&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5968290&#34;&gt; 06. 二层协议第一天：STP和RSTP区别-1【2021.01.17】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6176161&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6176161&#34;&gt; 07. 二层协议第二天：STP和RSTP区别-2【2021.01.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5025987&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5025987&#34;&gt; 08. 二层协议第二天：STP和RSTP区别-3【2021.01.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7610559&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7610559&#34;&gt; 09. 二层协议第三天：MSTP【2021.01.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8958990&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8958990&#34;&gt; 10. 二层协议第三天：VLAN特性【2021.01.20】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5400805&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5400805&#34;&gt; 11. 二层协议第四天：Super VLAN&amp;MUX VLAN&amp;Smart-link【2021.01.21】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;code&gt;22-24号整理大量二层追问和视频中没有的知识点，作为二层的结尾。二层知识点多且杂，但主要的部分是STP、VLAN、PPP，其他的也准备一下，但适可而止&lt;/code&gt;&lt;/p&gt;
 &lt;h1 id=&#34;4-igp协议-20161118&#34;&gt;4. IGP协议-2016.11.18&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3495340&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3495340&#34;&gt; 12. IGP协议第一天：路由基础&amp;RIP-1【2021.01.24】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5701428&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5701428&#34;&gt; 13. IGP协议第一天：RIP-2【2021.01.25】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4754005&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4754005&#34;&gt; 14. IGP协议第二天：OSPF-1【2021.01.26】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9399627&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9399627&#34;&gt; 15. IGP协议第二天：OSPF-2【2021.01.27】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1531467&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1531467&#34;&gt; 16. IGP协议第三天：OSPF-3【2021.01.28】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5654943&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5654943&#34;&gt; 17. IGP协议第三天：OSPF-4【2021.01.30】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7102253&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7102253&#34;&gt; 18. IGP协议第四天：OSPF-5【2021.01.30】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-300046&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-300046&#34;&gt; 19. IGP协议第四天：OSPF-6【2021.01.31】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9633683&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9633683&#34;&gt; 20. IGP协议第五天：OSPF-7【2021.01.31】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5823233&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5823233&#34;&gt; 21. IGP协议第五天：OSPF-8【2021.02.01】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2817443&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2817443&#34;&gt; 22. IGP协议第六天：集成IS-IS-1【2021.02.06】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-329069&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-329069&#34;&gt; 23. IGP协议第六天：集成IS-IS-2【2021.02.07】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-761562&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-761562&#34;&gt; 24. IGP协议第六天：集成IS-IS-3【2021.02.08】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2345514&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2345514&#34;&gt; 25. IGP协议第六天：集成IS-IS-4【2021.02.08】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6624587&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6624587&#34;&gt; 12. IGP协议第一天：路由基础&amp;RIP-1【2021.01.24】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3619839&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3619839&#34;&gt; 13. IGP协议第一天：RIP-2【2021.01.25】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8509561&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8509561&#34;&gt; 14. IGP协议第二天：OSPF-1【2021.01.26】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5379323&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5379323&#34;&gt; 15. IGP协议第二天：OSPF-2【2021.01.27】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1186776&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1186776&#34;&gt; 16. IGP协议第三天：OSPF-3【2021.01.28】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-898510&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-898510&#34;&gt; 17. IGP协议第三天：OSPF-4【2021.01.30】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2532602&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2532602&#34;&gt; 18. IGP协议第四天：OSPF-5【2021.01.30】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-490755&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-490755&#34;&gt; 19. IGP协议第四天：OSPF-6【2021.01.31】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6343731&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6343731&#34;&gt; 20. IGP协议第五天：OSPF-7【2021.01.31】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8844832&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8844832&#34;&gt; 21. IGP协议第五天：OSPF-8【2021.02.01】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8580950&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8580950&#34;&gt; 22. IGP协议第六天：集成IS-IS-1【2021.02.06】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-951287&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-951287&#34;&gt; 23. IGP协议第六天：集成IS-IS-2【2021.02.07】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8408556&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8408556&#34;&gt; 24. IGP协议第六天：集成IS-IS-3【2021.02.08】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3647044&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3647044&#34;&gt; 25. IGP协议第六天：集成IS-IS-4【2021.02.08】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;5-bgp协议-20161126&#34;&gt;5. BGP协议-2016.11.26&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-608517&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-608517&#34;&gt; 26. BGP协议第一天：BGP-1【2021.02.11】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3350879&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3350879&#34;&gt; 27. BGP协议第二天：BGP-2【2021.02.11】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1275792&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1275792&#34;&gt; 28. BGP协议第二天：BGP-3【2021.02.12】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4011699&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4011699&#34;&gt; 29. BGP协议第三天：BGP-4【2021.02.12】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3537332&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3537332&#34;&gt; 26. BGP协议第一天：BGP-1【2021.02.11】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9429368&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9429368&#34;&gt; 27. BGP协议第二天：BGP-2【2021.02.11】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6268603&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6268603&#34;&gt; 28. BGP协议第二天：BGP-3【2021.02.12】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-996231&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-996231&#34;&gt; 29. BGP协议第三天：BGP-4【2021.02.12】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;6-组播-20161129&#34;&gt;6. 组播-2016.11.29&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6706901&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6706901&#34;&gt; 30. 组播第一天：组播基础&amp;IGMPV1、V2【2021.02.13】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7052904&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7052904&#34;&gt; 31. 组播第二天：IGMPV3【2021.02.13】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5196879&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5196879&#34;&gt; 32. 组播第二天：IGMP Snooping&amp;Proxy【2021.02.14】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2215155&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2215155&#34;&gt; 33. 组播第三天：组播PIM-DM【2021.02.14】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1080541&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1080541&#34;&gt; 34. 组播第三天：组播PIM-SM&amp;MSDP【2021.02.15】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9824817&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9824817&#34;&gt; 30. 组播第一天：组播基础&amp;IGMPV1、V2【2021.02.13】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8397462&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8397462&#34;&gt; 31. 组播第二天：IGMPV3【2021.02.13】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9728668&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9728668&#34;&gt; 32. 组播第二天：IGMP Snooping&amp;Proxy【2021.02.14】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3660593&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3660593&#34;&gt; 33. 组播第三天：组播PIM-DM【2021.02.14】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5906461&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5906461&#34;&gt; 34. 组播第三天：组播PIM-SM&amp;MSDP【2021.02.15】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;7-特性-20161208&#34;&gt;7. 特性-2016.12.08&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4248364&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4248364&#34;&gt; 35. DHCP&amp;DHCP Snooping&amp;DAI&amp;IP源防护【2021.02.16】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3556714&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3556714&#34;&gt; 36. FTP主被模式【2021.02.16】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4075582&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4075582&#34;&gt; 35. DHCP&amp;DHCP Snooping&amp;DAI&amp;IP源防护【2021.02.16】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6673744&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6673744&#34;&gt; 36. FTP主被模式【2021.02.16】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;8-ipv6-20161211&#34;&gt;8. IPv6-2016.12.11&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3722631&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3722631&#34;&gt; 37. IPV6第一天：IPV6基础-1【2021.02.17】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6058995&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6058995&#34;&gt; 38. IPV6第一天：IPV6基础-2【2021.02.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2599833&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2599833&#34;&gt; 39. IPV6第二天：IPV6隧道技术-1【2021.02.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1002874&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1002874&#34;&gt; 40. IPV6第二天：IPV6隧道技术-2&amp;移动IPV6特性【2021.02.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9925184&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9925184&#34;&gt; 37. IPV6第一天：IPV6基础-1【2021.02.17】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2300509&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2300509&#34;&gt; 38. IPV6第一天：IPV6基础-2【2021.02.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3543854&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3543854&#34;&gt; 39. IPV6第二天：IPV6隧道技术-1【2021.02.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-283585&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-283585&#34;&gt; 40. IPV6第二天：IPV6隧道技术-2&amp;移动IPV6特性【2021.02.18】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;9-新加-201907&#34;&gt;9. 新加-2019.07&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7211834&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7211834&#34;&gt; 41. 乾颐堂面试-堆叠&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1941152&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1941152&#34;&gt; 42. 乾颐堂面试-路由撤销&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7691408&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7691408&#34;&gt; 43. 乾颐堂面试资料-V3相比V2增加&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6682287&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6682287&#34;&gt; 44. 乾颐堂面试资料-LSA问题&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2978692&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2978692&#34;&gt; 45. 乾颐堂面试资料-PPP&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-567026&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-567026&#34;&gt; 46. 乾颐堂面试-跨域&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4357320&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4357320&#34;&gt; 41. 乾颐堂面试-堆叠&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2659398&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2659398&#34;&gt; 42. 乾颐堂面试-路由撤销&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8676972&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8676972&#34;&gt; 43. 乾颐堂面试资料-V3相比V2增加&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7880598&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7880598&#34;&gt; 44. 乾颐堂面试资料-LSA问题&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8002841&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8002841&#34;&gt; 45. 乾颐堂面试资料-PPP&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4337064&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4337064&#34;&gt; 46. 乾颐堂面试-跨域&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 ">学习顺序</a>
       </div>
@@ -23656,43 +23842,43 @@ dis pim ipv6 rou  # 只有（*，FF1E::AA）
         <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/hcie-shi-yan-ts_plana-yao-qiu-zheng-li/"" data-c="
           &lt;h1 id=&#34;1-eth-trunk&#34;&gt;1. eth-trunk&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1568944&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1568944&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5690378&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5690378&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site1中，LSW1-LSW2之间的所有链路要求做eth-trunk的捆绑，并且此eth-trunk要求做src-dst-ip负载；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;2-mstp&#34;&gt;2. MSTP&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9555276&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9555276&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5148121&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5148121&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;site1中，CLIENT1属于VLAN12，CLIENT2属于VLAN34；MSTP中的VLAN12属于instance1，vlan34属于instance2；两个instance的主备根桥分别在SW1和SW2上，并且要求CLIENT1访问R1时经过的路径是SW3-SW1-R1；同时要求CLIENT2访问R1时经过的路径是SW3-SW2-R1;&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;3-bgp-adv&#34;&gt;3. BGP ADV&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4788792&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4788792&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6305054&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6305054&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;R1访问VLAN12时经过的路径是R1-LSW1-LSW3;访问VLAN34时经过的路径是R1-LSW2-LSW3；只允许在AS300中实现，并且确保你的解决方案不要影响AS100 AS300以外的其他AS;&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;4-ospf&#34;&gt;4. OSPF&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7631270&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7631270&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3687526&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3687526&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;AS100中所有设备都运行了OSPF，但是部分设备的邻居关系有问题，解决此问题&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;5-mux-vlan&#34;&gt;5. mux-vlan&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7527649&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7527649&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3070879&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3070879&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site4中，AR24、AR25、AR26在一个网段中，同时都运行了ISIS协议，要求AR26能和AR24、AR25都能形成邻居关系，但是AR24与AR25不能形成邻居关系；通过LSW8的二层VLAN技术以及其他设备排除错误点来实现此要求： 注意；配置过程中不能在LSW8上删除和增加新的VLAN；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;6-mpls-vpn&#34;&gt;6. MPLS-VPN&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-320441&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-320441&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2843276&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2843276&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site1与Site4为同一个VPN客户的两个站点，现在site1里的CLIENTS无法和site4里的CLIENT通信，请解决此问题；注意：不要删除现有配置，可修改解决&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;7-vrrp&#34;&gt;7. VRRP&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7725347&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7725347&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6105192&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6105192&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2中AR10与AR11要为LSW4的PC4提供第一跳网关冗余服务，虚拟网关地址为10.2.129.254和10.2.129.253；在配置正确的情况下，VRRP配置后的状态信息如下；  为了加速VRRP的收敛，使用BFD跟踪上行链路状态以及VRRP的邻居关系；(最终结果要和下面的信息一致)&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;&amp;lt;AR10&amp;gt;display vrrp
@@ -23780,37 +23966,37 @@ dis pim ipv6 rou  # 只有（*，FF1E::AA）
 &lt;hr&gt;
 &lt;h1 id=&#34;8-dhcp&#34;&gt;8. DHCP&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6122668&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6122668&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5585668&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5585668&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2中，AR10 AR11是DHCP服务器并且相互备份，要求CLIENT7能通过DHCP服务器获取到地址10.2.129.100；要求CLIENT8只能获取指定地址为10.2.129.101；现在CLIENT8有时无法获取地址，请解决；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;9-sham-link&#34;&gt;9. sham-link&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2451398&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2451398&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5797712&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5797712&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2与Site3为同一个VPN客户的两个站点，现在AR10与AR20上面的客户（loopback0模拟）都能互通；请解决此问题；并且要求当AS100连接正常的时候，两个客户的数据包通信必须经过AS100；但是AS100出现问题的时候，两个站点可以通过备份链路进行通信&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;10-ipv6&#34;&gt;10. IPv6&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2893295&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2893295&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1947107&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1947107&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2与Site3配置了IPV6，并且运行OSPFV3协议；参与的设备有AR10、AR11、AR18、AR20；AR18与AR20之间通过tunnel相通；现在环境中的IPV6 CLIENT 13、IPV6 CLIENT 9 、IPV6 CLIENT10无法实现互相通信，请解决&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;11-telnet&#34;&gt;11. Telnet&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3020426&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3020426&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4156759&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4156759&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site3中，AR16 AR17 AR18帧中继网络中运行ospf，使用默认的网络类型；要求AR18能通过telnet远程管理AR16、AR17；现在AR18无法远程管理；解决此问题已满足以下表项；要求AR16的telnet认证方式为AAA，AR16上存在两个用户，admin用户级别为15级，guest用户级别为1级要求两个用户都能认证telnet登录；要求AR17的认证方法为password；所有telnet到AR17的用户级别无需求，但是能支持命令要求截图一致&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;12-qos&#34;&gt;12. Qos&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1419982&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1419982&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5090689&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5090689&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site3中AR20上一个用户（ loopback0模拟）和AR18的一个用户（loopback0模拟）要进行语音通信，使用的音频编码G.711，每路语音需要64Kbps的带宽，目前从AR20到AR18的语音质量不够好，需要在AR19上部署QOS；以保证语音流量的服务质量（反向流量不要求）&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;13-nat&#34;&gt;13. NAT&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7312794&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7312794&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2964417&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2964417&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site5中通过安全接入AS,client11现在无法通过网关AR27访问到公网AS100、AS200；解决此问题已满足以下表项&lt;/p&gt;
 ">HCIE 实验TS_PlanA要求整理</a>
@@ -24407,7 +24593,7 @@ local-user hcie password cipher hcie
 &lt;figure data-type=&#34;image&#34; tabindex=&#34;1&#34;&gt;&lt;img src=&#34;https://fqj-web.github.io/post-images/1605853424451.PNG&#34; alt=&#34;TS_PlanB&#34; loading=&#34;lazy&#34;&gt;&lt;/figure&gt;
 &lt;h2 id=&#34;1-mstp&#34;&gt;1. MSTP&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8048332&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8048332&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1668524&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1668524&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;site1中，CLIENT1属于VLAN12，CLIENT2属于VLAN34；&lt;br&gt;
 MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
@@ -24417,13 +24603,13 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;2-eth-trunk&#34;&gt;2. eth-trunk&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3829023&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3829023&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2309512&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2309512&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site1中，LSW1-LSW2之间的所有链路要求做eth-trunk的捆绑，并且此eth-trunk要求做src-dst-ip负载；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;3-bgp-adv&#34;&gt;3. BGP ADV&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9648597&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9648597&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1755699&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1755699&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;R1访问VLAN12时经过的路径是R1-LSW1-LSW3;&lt;br&gt;
 访问VLAN34时经过的路径是R1-LSW2-LSW3；&lt;br&gt;
@@ -24431,7 +24617,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;4-mux-vlan&#34;&gt;4. mux-vlan&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8207314&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8207314&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2522329&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2522329&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site4中，AR24、AR25、AR26在一个网段中，同时都运行了ISIS协议，要求AR26能和AR24、AR25都能形成邻居关系，但是AR24与AR25不能形成邻居关系；&lt;br&gt;
 通过LSW8的二层VLAN技术以及其他设备排除错误点来实现此要求：&lt;br&gt;
@@ -24439,7 +24625,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;5-mpls-vpn&#34;&gt;5. MPLS-VPN&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9013918&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9013918&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5649868&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5649868&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site1与Site4为同一个VPN客户的两个站点，现在site1里的CLIENTS无法和site4里的CLIENT通信，请解决此问题；&lt;br&gt;
 注意：不要删除现有配置，可修改解决；&lt;/p&gt;
@@ -24449,7 +24635,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;6-sham-link&#34;&gt;6. sham-link&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4436241&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4436241&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-336940&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-336940&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2与Site3为同一个VPN客户的两个站点，现在AR10与AR20上面的客户（loopback0模拟）都能互通；请解决此问题；&lt;br&gt;
 并且要求当AS100连接正常的时候，两个客户的数据包通信必须经过AS100；但是AS100出现问题的时候，两个站点可以通过备份链路进行通信；&lt;/p&gt;
@@ -24459,7 +24645,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;7-vrrp&#34;&gt;7. vrrp&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1065838&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1065838&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5444424&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5444424&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2中AR10与AR11要为LSW4的PC4提供第一跳网关冗余服务，虚拟网关地址为10.2.129.254和10.2.129.253；  为了加速VRRP的收敛，使用BFD跟踪上行链路状态以及VRRP的邻居关系；(最终结果要和下面的信息一致)&lt;br&gt;
 在配置正确的情况下，VRRP配置后的状态信息如下：&lt;/p&gt;
@@ -24548,7 +24734,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;8-telnet&#34;&gt;8. Telnet&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2101629&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2101629&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2903665&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2903665&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site3中，AR16 AR17 AR18帧中继网络中运行ospf，使用默认的网络类型；&lt;br&gt;
 要求AR18能通过telnet远程管理AR16、AR17；现在AR18无法远程管理；解决此问题已满足以下表项；&lt;br&gt;
@@ -24557,7 +24743,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;9-ipv6&#34;&gt;9. IPv6&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5314572&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5314572&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7828785&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7828785&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2与Site3配置了IPV6，并且运行OSPFV3协议；&lt;br&gt;
 参与的设备有AR10、AR11、AR18、AR20；AR18与AR20之间通过tunnel相通；&lt;br&gt;
@@ -24569,13 +24755,13 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;10-bgp&#34;&gt;10. BGP&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6110504&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6110504&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3781859&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3781859&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;要求AS100中AR12的loopback0口能够访问AS200中的AR9的loopback0口；但是现在两个loopback口地址无法访问；请解决该问题；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;11-nat&#34;&gt;11. NAT&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4775888&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4775888&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6891452&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6891452&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site5中通过安全接入AS，client11现在无法通过网关AR27访问到公网AS100、AS200；解决此问题已满足以下表项；&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;1. AR9的s3/0/0接口宣告进ISIS 200
@@ -24583,7 +24769,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;12-dhcp&#34;&gt;12. DHCP&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4556941&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4556941&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8058465&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8058465&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2中，AR10 AR11是DHCP服务器并且相互备份，要求CLIENT7能通过DHCP服务器获取到地址10.2.129.100；&lt;br&gt;
 要求CLIENT8只能获取指定地址为10.2.129.101；&lt;br&gt;
@@ -24591,13 +24777,13 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;13-ospf&#34;&gt;13. OSPF&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6916902&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6916902&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1994812&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1994812&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;AS100中所有设备都运行了OSPF，但是部分设备的邻居关系有问题，解决此问题；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;14-msdp&#34;&gt;14. msdp&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-166910&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-166910&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7895962&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7895962&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;AS100与AS200要部署域间组播；&lt;br&gt;
 AR7是AS100中的RP，AR9是AS200中的RP；&lt;br&gt;
@@ -24608,14 +24794,14 @@ AS100中AR22上有一台视频服务器，AS200中AR23上有一个组播接收�
 &lt;hr&gt;
 &lt;h2 id=&#34;15-qos&#34;&gt;15. QoS&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5909950&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5909950&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4927516&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4927516&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site3中AR20上一个用户（ loopback0模拟）和AR18的一个用户（loopback0模拟）要进行语音通信，使用的音频编码G.711，每路语音需要64Kbps的带宽，目前从AR20到AR18的语音质量不够好，需要在AR19上部署QOS；&lt;br&gt;
 以保证语音流量的服务质量（反向流量不要求）；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;16-ipv6-bgp&#34;&gt;16. IPv6 BGP&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5973489&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5973489&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-361008&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-361008&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;AS200中AR9 AR4 AR5上面各有一个IPV6客户站点（loopback1模拟），AS100中有AR2 AR7上各有一个IPV6客户站点（loopback1模拟），要求这几个站点都能互通，并且要求双向路径要优选AR2-AR4之间的链路，一旦主用链路出现问题在使用备用链路AR2-AR5；&lt;br&gt;
 现在这几个站点之间的互通存在部分问题，请解决；&lt;/p&gt;
