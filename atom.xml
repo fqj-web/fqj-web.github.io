@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-06-24T15:24:50.555Z</updated>
+    <updated>2021-06-29T18:10:22.703Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
@@ -15,7 +15,21 @@
         <id>https://fqj-web.github.io/post/gitandgithub/</id>
         <link href="https://fqj-web.github.io/post/gitandgithub/">
         </link>
-        <updated>2021-06-30T01:53:37.000Z</updated>
+        <updated>2021-07-10T01:53:37.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Centos7 搭建虚拟局域网VPN（还差1个板块，N2N）]]></title>
+        <id>https://fqj-web.github.io/post/centos7-da-jian-xu-ni-ju-yu-wang-vpn/</id>
+        <link href="https://fqj-web.github.io/post/centos7-da-jian-xu-ni-ju-yu-wang-vpn/">
+        </link>
+        <updated>2021-07-08T13:56:21.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[局域网网络测速]]></title>
+        <id>https://fqj-web.github.io/post/ju-yu-wang-wang-luo-ce-su/</id>
+        <link href="https://fqj-web.github.io/post/ju-yu-wang-wang-luo-ce-su/">
+        </link>
+        <updated>2021-06-25T15:22:38.000Z</updated>
     </entry>
     <entry>
         <title type="html"><![CDATA[python 哈希]]></title>
@@ -30,19 +44,5 @@
         <link href="https://fqj-web.github.io/post/qun-hui-duo-she-bei-zhi-jian-tong-bu-andhuo-qu-root-quan-xian-andxi-tong-ban-ben-jiang-ji/">
         </link>
         <updated>2021-06-22T14:18:40.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[关于项目实施的一些心得]]></title>
-        <id>https://fqj-web.github.io/post/guan-yu-xiang-mu-shi-shi-de-yi-xie-xin-de/</id>
-        <link href="https://fqj-web.github.io/post/guan-yu-xiang-mu-shi-shi-de-yi-xie-xin-de/">
-        </link>
-        <updated>2021-06-19T14:10:15.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[windows10 功能设置和设置（配合NTLite精简系统）]]></title>
-        <id>https://fqj-web.github.io/post/windows10-gong-neng-she-zhi-he-she-zhi-pei-he-ntlite-jing-jian-xi-tong/</id>
-        <link href="https://fqj-web.github.io/post/windows10-gong-neng-she-zhi-he-she-zhi-pei-he-ntlite-jing-jian-xi-tong/">
-        </link>
-        <updated>2021-06-19T06:43:11.000Z</updated>
     </entry>
 </feed>
