@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-06-29T18:10:22.703Z</updated>
+    <updated>2021-07-29T05:08:26.646Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
@@ -11,38 +11,38 @@
     <icon>https://fqj-web.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 飞琼君·WebOS</rights>
     <entry>
+        <title type="html"><![CDATA[自制奶茶（5款）]]></title>
+        <id>https://fqj-web.github.io/post/zi-zhi-nai-cha-5-kuan/</id>
+        <link href="https://fqj-web.github.io/post/zi-zhi-nai-cha-5-kuan/">
+        </link>
+        <updated>2021-07-27T14:10:30.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[golang 第三章 变量]]></title>
+        <id>https://fqj-web.github.io/post/golang-di-san-zhang-bian-liang/</id>
+        <link href="https://fqj-web.github.io/post/golang-di-san-zhang-bian-liang/">
+        </link>
+        <updated>2021-07-22T14:54:18.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[golang 第一章+第二章 概述]]></title>
+        <id>https://fqj-web.github.io/post/golang-di-yi-zhang-kai-shan-pian/</id>
+        <link href="https://fqj-web.github.io/post/golang-di-yi-zhang-kai-shan-pian/">
+        </link>
+        <updated>2021-07-22T10:58:51.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[酸梅汤]]></title>
+        <id>https://fqj-web.github.io/post/suan-mei-tang/</id>
+        <link href="https://fqj-web.github.io/post/suan-mei-tang/">
+        </link>
+        <updated>2021-07-19T03:22:03.000Z</updated>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[Git和Github]]></title>
         <id>https://fqj-web.github.io/post/gitandgithub/</id>
         <link href="https://fqj-web.github.io/post/gitandgithub/">
         </link>
-        <updated>2021-07-10T01:53:37.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Centos7 搭建虚拟局域网VPN（还差1个板块，N2N）]]></title>
-        <id>https://fqj-web.github.io/post/centos7-da-jian-xu-ni-ju-yu-wang-vpn/</id>
-        <link href="https://fqj-web.github.io/post/centos7-da-jian-xu-ni-ju-yu-wang-vpn/">
-        </link>
-        <updated>2021-07-08T13:56:21.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[局域网网络测速]]></title>
-        <id>https://fqj-web.github.io/post/ju-yu-wang-wang-luo-ce-su/</id>
-        <link href="https://fqj-web.github.io/post/ju-yu-wang-wang-luo-ce-su/">
-        </link>
-        <updated>2021-06-25T15:22:38.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[python 哈希]]></title>
-        <id>https://fqj-web.github.io/post/python-ha-xi/</id>
-        <link href="https://fqj-web.github.io/post/python-ha-xi/">
-        </link>
-        <updated>2021-06-23T14:46:12.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[群晖 多设备之间同步&获取root权限&系统版本降级]]></title>
-        <id>https://fqj-web.github.io/post/qun-hui-duo-she-bei-zhi-jian-tong-bu-andhuo-qu-root-quan-xian-andxi-tong-ban-ben-jiang-ji/</id>
-        <link href="https://fqj-web.github.io/post/qun-hui-duo-she-bei-zhi-jian-tong-bu-andhuo-qu-root-quan-xian-andxi-tong-ban-ben-jiang-ji/">
-        </link>
-        <updated>2021-06-22T14:18:40.000Z</updated>
+        <updated>2021-07-13T01:53:37.000Z</updated>
     </entry>
 </feed>
