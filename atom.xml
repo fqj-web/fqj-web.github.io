@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-07-30T18:09:26.744Z</updated>
+    <updated>2021-08-23T02:03:06.065Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
@@ -11,38 +11,38 @@
     <icon>https://fqj-web.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 飞琼君·WebOS</rights>
     <entry>
+        <title type="html"><![CDATA[存储高可用性：iSCSI、RAID、LVM]]></title>
+        <id>https://fqj-web.github.io/post/cun-chu-gao-ke-yong-xing-iscsiraidlvm/</id>
+        <link href="https://fqj-web.github.io/post/cun-chu-gao-ke-yong-xing-iscsiraidlvm/">
+        </link>
+        <updated>2021-08-20T13:24:20.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[golang 第五章 程序流程控制]]></title>
+        <id>https://fqj-web.github.io/post/golang-di-wu-zhang-cheng-xu-liu-cheng-kong-zhi/</id>
+        <link href="https://fqj-web.github.io/post/golang-di-wu-zhang-cheng-xu-liu-cheng-kong-zhi/">
+        </link>
+        <updated>2021-08-13T03:11:45.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[golang 第四章 运算符]]></title>
+        <id>https://fqj-web.github.io/post/golang-di-si-zhang-yun-suan-fu/</id>
+        <link href="https://fqj-web.github.io/post/golang-di-si-zhang-yun-suan-fu/">
+        </link>
+        <updated>2021-08-11T07:27:30.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Nginx配置访问用户名和密码]]></title>
+        <id>https://fqj-web.github.io/post/nginx-pei-zhi-fang-wen-yong-hu-ming-he-mi-ma/</id>
+        <link href="https://fqj-web.github.io/post/nginx-pei-zhi-fang-wen-yong-hu-ming-he-mi-ma/">
+        </link>
+        <updated>2021-08-05T07:49:14.000Z</updated>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[win10_lstb_2016最后一次精简]]></title>
         <id>https://fqj-web.github.io/post/win10_lstb_2016-zui-hou-yi-ci-jing-jian/</id>
         <link href="https://fqj-web.github.io/post/win10_lstb_2016-zui-hou-yi-ci-jing-jian/">
         </link>
         <updated>2021-07-30T17:28:04.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[使用Resilio Sync部署同步服务器]]></title>
-        <id>https://fqj-web.github.io/post/shi-yong-resilio-sync-bu-shu-tong-bu-fu-wu-qi/</id>
-        <link href="https://fqj-web.github.io/post/shi-yong-resilio-sync-bu-shu-tong-bu-fu-wu-qi/">
-        </link>
-        <updated>2021-07-30T07:53:19.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[windows简化--最简服务]]></title>
-        <id>https://fqj-web.github.io/post/windows-jian-hua-zui-jian-fu-wu/</id>
-        <link href="https://fqj-web.github.io/post/windows-jian-hua-zui-jian-fu-wu/">
-        </link>
-        <updated>2021-07-29T13:44:23.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[自制奶茶（5款）]]></title>
-        <id>https://fqj-web.github.io/post/zi-zhi-nai-cha-5-kuan/</id>
-        <link href="https://fqj-web.github.io/post/zi-zhi-nai-cha-5-kuan/">
-        </link>
-        <updated>2021-07-27T14:10:30.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[golang 第三章 变量]]></title>
-        <id>https://fqj-web.github.io/post/golang-di-san-zhang-bian-liang/</id>
-        <link href="https://fqj-web.github.io/post/golang-di-san-zhang-bian-liang/">
-        </link>
-        <updated>2021-07-22T14:54:18.000Z</updated>
     </entry>
 </feed>

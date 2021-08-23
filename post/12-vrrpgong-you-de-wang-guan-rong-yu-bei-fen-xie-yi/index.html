@@ -9,7 +9,7 @@
 <meta name="description" content="飞琼君个人博客，记录日常学习笔记">
 <meta name="theme-color" content="#000">
 <title>12 VRRP（公有的网关冗余备份协议） | 飞琼君·WebOS</title>
-<link rel="shortcut icon" href="/favicon.ico?v=1627668546913">
+<link rel="shortcut icon" href="/favicon.ico?v=1629684149174">
 <link rel="stylesheet" href="/media/css/gemini.css">
 <link rel="stylesheet" href="/media/fonts/font-awesome.css">
 <link
@@ -918,6 +918,883 @@ vrrp vrid 9 priority 110
       <hr>
     </div>
     <div class="result" id="result">
+      
+      <div class="item">
+        <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/cun-chu-gao-ke-yong-xing-iscsiraidlvm/"" data-c="
+          &lt;h1 id=&#34;iscsi&#34;&gt;iSCSI&lt;/h1&gt;
+&lt;h2 id=&#34;iscsi与nfs的区别&#34;&gt;iSCSI与NFS的区别&lt;/h2&gt;
+&lt;p&gt;在产品开发过程中，除了对运维、数据库等的讨论，更多的是在讨论存储的问题，这不仅仅涉及到日志、用户数据等储存和再利用，还设计到系统的稳定性以及产品上线之后的运维等一系列问题。目前，主要将存储分为两大类：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;直连存储（DAS），即通过主板跟硬盘直接相连的存储，读写速率高，但是扩展性依赖与主板存储接口的数量，后期存储扩展的费用高、工程量大&lt;/li&gt;
+&lt;li&gt;网络存储，即通过网络提供的存储，可扩展性比较好，但网络是瓶颈，但目前通过4口万兆光网卡&lt;sub&gt;主板带宽为40G时&lt;/sub&gt;聚合一般可以解决问题&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;通过以上的对比，目前在开发过程中主要采用的是网络存储，在网络存储中，又分为两大派系：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;NAS，网络附加存储，通过网络提供额外的存储给前端服务器使用，即文件系统在存储，主要代表为NFS（比较流行）和CIFS（Samba，安全性问题比较多）&lt;/li&gt;
+&lt;li&gt;SAN，存储区域网络，是一个提供了存储的网络区域，即文件系统在前端，主要代表为iSCSI（IP SAN，成本低，兼容性强）和FC SAN（硬件包括FC卡、FC HUB、FC交换机、存储系统等）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;从成本和后期维护等角度考虑，目前常用的为iSCSI和NFS，下面看一下应用在各种情况下是如何存储数据的：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Linux存储模型如下：&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1629468544313.png&#34; alt=&#34;Linux存储模型&#34; loading=&#34;lazy&#34;&gt;&lt;/li&gt;
+&lt;li&gt;NAS存储模型如下：&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1629468595172.jpg&#34; alt=&#34;NAS存储模型&#34; loading=&#34;lazy&#34;&gt;&lt;/li&gt;
+&lt;li&gt;iSCSI存储模型如下：&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1629468624398.jpg&#34; alt=&#34;iSCSI存储模型&#34; loading=&#34;lazy&#34;&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;通过以上对比，iSCSI比NFS主要是减少了VFS层的开销以及文件系统的开销，前端服务器可以直接将iSCSI作为本地磁盘进行任何操作，连接上iSCSI存储之后，本地会多出跟直连设备一样的存储设备，供前端设备进行分区和格式化操作，所以其效率比NFS要高。&lt;br&gt;
+同时，ISCSI前端服务器可以根据需要连接更多或者更少的iSCSI存储，如同在本地直连更多存储一样，然后进行分区、格式化等操作，之后加入LVM来扩展原有的文件系统，并且没有主板接口的限制，扩展性极强。&lt;br&gt;
+NFS作为一种附加存储，只能在服务端进行存储的扩展才能做到前端存储的增加，并且前端挂载之后，无法在其上建立LVM，因此无法直接扩展前端原有的文件系统，扩展性相对较低。&lt;br&gt;
+但是NFS并非一无是处，其在存储共享，尤其是文件系统的共享，以及存储设备故障之后，进行数据恢复，这两方面存在巨大的优势。&lt;br&gt;
+这两者的本质区别是NFS使用文件级别的实施，服务器或存储阵列托管整个文件系统，客户到文件系统上读写文件，而iSCSI则使用数据块，存储阵列向客户提供数据块集合，赋予原始存储数据一定的格式化，而不去管文件系统究竟如何使用。因此，在数据备份时，NFS备份的是文件系统，而iSCSI备份的数据块。&lt;/p&gt;
+&lt;h2 id=&#34;iscsi搭建&#34;&gt;iSCSI搭建&lt;/h2&gt;
+&lt;p&gt;iSCSI分为服务端（target）与客户端（initiator）。iSCSI服务端，用于存放硬盘存储资源的服务器，提供可用的存储资源。iSCSI客户端，即用于访问远程服务端的存储资源工具&lt;/p&gt;
+&lt;h3 id=&#34;环境介绍&#34;&gt;环境介绍&lt;/h3&gt;
+&lt;p&gt;iSCSI服务端，Centos7，192.168.10.10&lt;br&gt;
+iSCSI客户端，Centos7，192.168.10.20&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;1. 关闭selinux
+2. 关闭firewalld
+如果不关闭防火墙firewalld，则需要放行相应的端口：
+firewall-cmd --permanent --add-port=3260/tcp
+firewall-cmd --reload
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&#34;服务端target&#34;&gt;服务端（target）&lt;/h3&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 安装服务端和配置工具
+yum -y install targetd targetcli
+systemctl enable targetd
+
+# 配置
+targetcli
+ls  # 查看目录结构
+cd /backstores/block  # 进入添加存储资源的目录下
+create diska /dev/sdb # 添加磁盘/dev/sdb为存储资源，即将/dev/sdb共享出去，diska可自定义，下面创建target名称之后还要用到
+# 或者create dev=/dev/sdb name=sdb
+
+# 创建target名称
+# iSCSI target 名称一串用于描述共享资源的唯一字符串
+cd /iscsi
+create # 由系统默认生成，例如此次生成的结果如下：iqn.2003-01.org.linux-iscsi.source.x8664:sn.cdfa333799987，注意最后一个英文句号不是名称部分
+# 或者自定义：create iqn.2021-08.node1.iscsi:server
+cd iqn.2003-01.org.linux-iscsi.source.x8664:sn.cdfa333799987/tpg1/luns
+create /backstores/block/diska  # 在添加存储资源时，diska是自定义的，需要保持一致
+
+# 设置访问控制列表
+# iSCSI 协议是通过客户端名称进行验证的，用户在访问存储共享资源时不需要输入密码，只要 iSCSI 客户端的名称与服务端中设置的访问控制列表中某一名称条目一致即可
+# 认证字符串一般设置的时候遵循的规则是：在名称后面加:client
+cd ../acls
+create iqn.2003-01.org.linux-iscsi.source.x8664:sn.cdfa333799987:client
+# 这个字符串需要记录下来，客户端需要使用
+
+# 设置 iSCSI 服务端的监听 IP 地址和端口号
+# 默认监听的是0.0.0.0:3260
+cd ../portals
+create 192.168.10.10
+
+# 检查配置信息
+cd /
+ls
+
+# 退出并重启服务
+exit
+systemctl start targetd &amp;amp;&amp;amp; systemctl status targetd
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&#34;客户端initiator&#34;&gt;客户端（initiator）&lt;/h3&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 安装客户端
+yum -y install iscsi-initiator-utils
+systemctl enable iscsid
+
+# 编辑客户端验证文件
+# iSCSI协议是通过客户端的名称来进行验证，而该名称也是iSCSI客户端的唯一标识
+# 而且必须与服务端配置文件中访问控制列表中的信息一致
+# 否则客户端在尝试访问存储共享设备时，系统会弹出验证失败信息
+vim /etc/iscsi/initiatorname.iscsi
+    InitiatorName=iqn.2003-01.org.linux-iscsi.source.x8664:sn.cdfa333799987:client
+systemctl start iscsid &amp;amp;&amp;amp; systemctl status iscsid
+
+# iSCSI客户端访问并使用共享存储资源的步骤
+# 先发现，再登录，最后挂载并使用
+iscsiadm -m discovery -t st -p 192.168.10.10
+iscsiadm -m node -T iqn.2003-01.org.linux-iscsi.source.x8664:sn.cdfa333799987 --login
+# 登录之后就可以发现本地已经多了一个存储，例如新增的是/dev/sdb
+lsblk 
+file /dev/sdb
+mkfs.xfs /dev/sdb
+blkid | grep /dev/sdb  # 查看该存储资源UUID，用于挂载网络存储
+mkdir /iscsi  # 挂载路径
+echo &amp;quot;UUID=xxxxxxxx /iscsi xfs defaults,_netdev 0 0&amp;quot; /etc/fstab # 添加上_netdev参数，表示当系统联网后再进行挂载操作
+mount -a
+
+# 不再使用iSCSI共享设备资源时，使用-u 参数将其设备卸载
+iscsiadm -m node -T iqn.2003-01.org.linux-iscsi.source.x8664:sn.cdfa333799987 -u
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&#34;iscsi认证&#34;&gt;iSCSI认证&lt;/h3&gt;
+&lt;p&gt;上面只是通过字符串进行认证，这种方式简便，但是也存在安全问题，iSCSI提供不同的认证方式来解决其安全问题&lt;br&gt;
+iSCSI认证分为发现认证和登录认证，其中每种认证又分为单向认证和双向认证。发现认证和登录认证的意思就和名字一样。&lt;br&gt;
+单向认证是指initiator端在发现target端的时候，要提供正确的认证才能发现在target端的iSCSI服务；双向认证是指在单向认证的基础上，target端需要正确设置initiator端设置的认证才能被initiator端发现&lt;/p&gt;
+&lt;h4 id=&#34;发现认证&#34;&gt;发现认证&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;设置单向认证&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# .......................服务端..................................
+targetcli
+cd /iscsi
+# 查看发现认证的默认属性，这是一个全局的设置
+get discovery_auth enable userid password mutual_userid mutual_password
+# 设置单向认证
+set discovery_auth enable=1 userid=target10 password=123456 
+exit
+systemctl restart targetd
+
+# .........................客户端......................................
+# 修改iscsi配置文件
+vim /etc/iscsi/iscsid.conf
+    discovery.sendtargets.auth.authmethod = CHAP  # 默认认证方式为挑战握手协议
+    discovery.sendtargets.auth.username = target10
+    discovery.sendtargets.auth.password = 123456
+systemctl restart iscsid
+# 重新发现（登陆步骤省略）
+iscsiadm -m discovery -t st -p 192.168.10.10
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;设置双向认证&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# .........................客户端......................................
+# 首先在initiator端设置认证
+vim /etc/iscsi/iscsid.conf  # 追加如下内容
+    discovery.sendtargets.auth.username_in = initiator20
+    discovery.sendtargets.auth.password_in = 654321
+systemctl restart iscsid
+
+# .......................服务端..................................
+targetcli
+cd /iscsi
+set discovery_auth mutual_userid=initiator20 mutual_password=654321
+exit
+systemctl restart targetd
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4 id=&#34;登录认证&#34;&gt;登录认证&lt;/h4&gt;
+&lt;p&gt;登录认证和发现认证类似，也是分为单向认证和双向认证，设置的方法和发现认证几乎一样&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# .......................服务端..................................
+# generate_node_acls属性表示是否开启ACL，当为no-gen-acls的是否，initiator端的iqn号（/etc/iscsi/initiatorname.iscsi下）必须加入acl才能登陆
+targetcli
+cd iscsiiqn.2003-01.org.linux-iscsi.source.x8664:sn.cdfa333799987/tpg1
+ls
+# 在tpg1目录下打开认证set attribute authentication=1，作用类似发现认证的enable
+# 在acls的iqn....目录下设置用户和密码，操作类似发现认证
+set auth # 参数包含单向认证的userid和password，以及双向认证的mutual_userid和mutual_password，此处不再演示
+
+# .........................客户端......................................
+vim /etc/iscsi/iscsid.conf  # 追加如下内容
+    # 即将发现中的discovery.sendtargets改成node.session
+    # 单向
+    node.session.auth.authmethod = CHAP  # 默认认证方式为挑战握手协议
+    node.sessions.auth.username = target10
+    node.session.auth.password = 123456
+    # 双向
+    node.session.auth.username_in = initiator20
+    node.session.auth.password_in = 654321
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;raid&#34;&gt;RAID&lt;/h1&gt;
+&lt;p&gt;硬RAID需要使用专用的RAID卡来实现，有的时候在资金不充足的情况下，又想保证数据的安全性，可以使用软RAID来实现，但是这个需要CPU资源来支持&lt;br&gt;
+&lt;strong&gt;为了实现分布式存储，提高存储的可用性，以及数据的安全性，可以使用iSCSI+软RAID的方案，即iscsi的客户端initiator作为存储资源的管理端，将多块iscsi存储资源配置为raid&lt;/strong&gt;&lt;/p&gt;
+&lt;h2 id=&#34;软raid和硬raid的区别&#34;&gt;软RAID和硬RAID的区别&lt;/h2&gt;
+&lt;p&gt;如果由CPU执行硬盘控制器的驱动程序代码完成，就是软RAID；如果由RAID卡上的主控芯片完成，就是硬RAID。&lt;br&gt;
+有的服务器虽然没有RAID卡，但是主板板载RAID控制芯片完成上述转换，这也是硬RAID。但是在家用级主板，某些低端的扩展卡所提供的RAID功能，是由CPU执行驱动程序的相关代码实现上述转换，都是软RAID。&lt;br&gt;
+某些操作系统的文件系统/块设备驱动本身也可以实现类似功能，例如Windows动态磁盘实现的镜像卷/带区卷/RAID5卷以及存储空间、Linux的DM、BtrFS、BSD/Solaris的ZFS，与硬件无关，自然都是软RAID。对于软RAID来说，这些操作需要占用一定的CPU资源，尤其是RAID5和RAID6&lt;code&gt;这两种模式的写入操作很复杂，不建议使用，数据修复几乎不可能&lt;/code&gt;&lt;br&gt;
+至于安全性和便利性方面：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;安全性方面，只要RAID级别相同，并没有太大区别，主要看RAID管理器是否提供校验/修复功能，是否支持自动定期校验/修复&lt;/li&gt;
+&lt;li&gt;便利性方面，主要看RAID管理器提供的功能。例如是否可以动态扩展逻辑驱动器，动态升级RAID级别，或者增加SSD缓存加速读写性能等。如果软RAID是Intel芯片组提供的话，Intel的RST是支持这几个功能的，至于其它硬RAID或者软RAID方案，需要具体问题具体分析&lt;code&gt;当需要迁移系统时，硬RAID可以直接 Ghost ；但是软RAID没法Ghost备份&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;如果不开启写入缓存（例如RAID卡设置为WriteThrough模式），RAID5和RAID6的写入性能会非常低下。如果开启回写缓存（RAID卡设置WriteBack模式），则一旦发生系统崩溃、电源故障等情况，可能会导致数据丢失，硬件RAID卡一般会有电池单元给缓存供电，系统重启/电源恢复的时候可以把缓存中未写入硬盘的数据写入硬盘。&lt;/p&gt;
+&lt;h2 id=&#34;实施&#34;&gt;实施&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 安装软件
+yum -y install mdadm
+
+# 创建raid阵列
+mdadm -Cv /dev/md0 -n 3 -l 5 -x 1 /dev/sdb /dev/sdc /dev/sdd /dev/sde
+# -Cv：为创建阵列并显示过程
+# /dev/md0：为生成的阵列组名称
+# -n 3：创建RAID 5磁盘阵列所需的硬盘个数
+# -l 5：RAID磁盘阵列的级别
+# -x 1：磁盘阵列的备份盘个数
+# /dev/sdb /dev/sdc /dev/sdd /dev/sde：需要使用的硬盘名称，可以使用配符来指定硬盘设备的名称
+
+# 查看设备的详细信息
+mdadm -D /dev/md0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;lvm&#34;&gt;LVM&lt;/h1&gt;
+&lt;p&gt;如果存储服务器已经配置了硬RAID1或者RAID10或者RAID01来保障数据的安全性，为了&lt;strong&gt;提高存储的可用性和扩展性&lt;/strong&gt;，通常需要&lt;strong&gt;使用iSCSI搭配LVM来实现&lt;/strong&gt;，即&lt;strong&gt;在iscsi的客户端initiator上配置LVM&lt;/strong&gt;来&lt;strong&gt;实现存储的伸缩&lt;/strong&gt;，即随着实际需求的变化调整硬盘分区的大小时，提高存储灵活性，LVM可以允许用户对硬盘资源进行动态调整。LVM是在硬盘分区和文件系统之间添加了一个逻辑层，它提供了一个抽象的卷组，可以把多块硬盘进行卷组合并。&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1629645002616.png&#34; alt=&#34;逻辑卷管理器的技术结构&#34; loading=&#34;lazy&#34;&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;物理卷PV处于LVM中的最底层，可以将其理解为物理硬盘、硬盘分区或者RAID磁盘阵列&lt;/li&gt;
+&lt;li&gt;卷组VG建立在物理卷PV之上，一个卷组VG可以包含多个物理卷PV，而且在卷组VG创建之后也可以继续向其中添加新的物理卷PV&lt;/li&gt;
+&lt;li&gt;逻辑卷LV是用卷组中空闲的资源建立的，并且逻辑卷在建立后可以动态地扩展或缩小空间&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;命令介绍&#34;&gt;命令介绍&lt;/h2&gt;
+&lt;figure data-type=&#34;image&#34; tabindex=&#34;1&#34;&gt;&lt;img src=&#34;https://fqj-web.github.io/post-images/1629645197932.png&#34; alt=&#34;常用的 LVM 部署命令&#34; loading=&#34;lazy&#34;&gt;&lt;/figure&gt;
+&lt;h2 id=&#34;实施-2&#34;&gt;实施&lt;/h2&gt;
+&lt;h3 id=&#34;创建&#34;&gt;创建&lt;/h3&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# ......................物理卷...................
+# 添加需要使用的磁盘
+pvcreate /dev/sdb /dev/sdc
+# 查看状态
+pvdisplay
+
+
+# ......................卷组...................
+# 把两块硬盘设备加入到storage（自定义）卷组
+vgcreate storage /dev/sdb /dev/sdc
+# 查看卷组的状态
+vgdisplay
+
+
+# ......................逻辑卷...................
+# 切割出一个约为150MB的逻辑卷设备
+# 对逻辑卷进行切割时有两种计量单位：
+# 1. 以容量为单位，所使用的参数为-L，例如，使用-L 150M生成一个大小为150MB的逻辑卷
+# 2. 以基本单元（默认为4MB）的个数为单位，所使用的参数为-l，例如，使用-l 37可以生成一个大小为37×4MB=148MB的逻辑卷
+lvcreate -n vo -l 37 storage  # vo是自定义的，后面挂载时使用；storage是在创建卷组时自定义的
+# 查看逻辑卷状态
+lvdisplay
+
+
+# 把生成好的逻辑卷进行格式化，然后挂载使用
+mkfs.xfs -f /dev/storage/vo
+mkdir /lvmtest
+echo &amp;quot;/dev/storage/vo /lvmtest xfs defaults 0 0&amp;quot; &amp;gt;&amp;gt; /etc/fstab
+mount -a
+df -h
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&#34;扩展&#34;&gt;扩展&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;只要卷组中有足够的资源，就可以一直为逻辑卷扩容&lt;/li&gt;
+&lt;li&gt;卷组中没有资源了，可以在PV中添加，然后再添加到卷组中&lt;/li&gt;
+&lt;li&gt;扩展前需要卸载设备&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 先卸载
+umount /lvmtest
+
+# 扩展逻辑卷（由150M到300M）
+lvextend -L 300M /dev/storage/vo
+
+# 检查硬盘完整性，并重置硬盘容量（至关重要）
+e2fsck -f /dev/storage/vo
+resize2fs /dev/storage/vo
+
+# 重新挂载硬盘设备并查看挂载状态
+mount -a
+df -h
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&#34;缩小&#34;&gt;缩小&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;在对逻辑卷进行缩容操作时，其丢失数据的风险更大，在生产环境中执行相应操作时，一定要&lt;strong&gt;提前备份好数据&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;在对LVM逻辑卷进行缩容操作之前，要&lt;strong&gt;先检查文件系统的完整性&lt;/strong&gt;，这是为了保证数据安全&lt;/li&gt;
+&lt;li&gt;在执行缩容操作前，和扩展一样，需要先把文件系统卸载掉&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 先卸载
+umount /lvmtest
+
+# 检查文件系统的完整性
+e2fsck -f /dev/storage/vo
+
+# 把逻辑卷vo的容量减小到200MB
+resize2fs /dev/storage/vo 200M
+lvreduce -L 200M /dev/storage/vo
+
+# 重新挂载文件系统并查看系统状态
+mount -a
+df -h
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&#34;逻辑卷快照&#34;&gt;逻辑卷快照&lt;/h3&gt;
+&lt;p&gt;LVM具有快照卷功能，类似于虚拟机软件的还原时间点功能，有两个特点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;快照卷的容量必须等同于逻辑卷的容量&lt;/li&gt;
+&lt;li&gt;快照卷仅一次有效，一旦执行还原操作后则会被立即自动删除&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 查看卷组的信息
+vgdisplay
+
+# 生成快照卷
+# -s生成快照卷，-L指定切割的大小
+lvcreate -L 200M -s -n SNAP /dev/storage/vo
+lvdisplay
+
+# 快照还原
+umount /lvmtest
+lvconvert --merge /dev/storage/SNAP   # 快照卷会被自动删除掉
+mount -a
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&#34;删除逻辑卷&#34;&gt;删除逻辑卷&lt;/h3&gt;
+&lt;p&gt;重新部署LVM或者不再需要使用LVM时，则需要执行LVM的删除操作。&lt;br&gt;
+需要提前备份好重要的数据信息，然后依次删除逻辑卷、卷组、物理卷设备，这个顺序不可颠倒&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 先卸载，并删除配置
+umount /lvmtest
+vim /etc/fstab
+    # 删除/dev/storage/vo /lvmtest xfs defaults 0 0
+
+# 删除逻辑卷设备
+lvremove /dev/storage/vo
+y
+
+# 删除卷组，此处只写卷组名称即可，不需要设备的绝对路径
+vgremove storage
+
+# 删除物理卷设备
+pvremove /dev/sdb /dev/sdc
+&lt;/code&gt;&lt;/pre&gt;
+">存储高可用性：iSCSI、RAID、LVM</a>
+      </div>
+      
+      <div class="item">
+        <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/golang-di-wu-zhang-cheng-xu-liu-cheng-kong-zhi/"" data-c="
+          &lt;p&gt;流程控制主要分为三大类：顺序控制、分支控制、循环控制&lt;/p&gt;
+&lt;h1 id=&#34;顺序控制&#34;&gt;顺序控制&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;程序从上到下逐行的执行，中间没有任何判断和跳转&lt;/li&gt;
+&lt;li&gt;golang中定义变量时采用合法的前向引用，即需要先声明后引用&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;分支控制&#34;&gt;分支控制&lt;/h1&gt;
+&lt;h2 id=&#34;if分支控制&#34;&gt;if分支控制&lt;/h2&gt;
+&lt;p&gt;单分支&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;if 条件表达式 {
+    执行代码块
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;双分支&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;if 条件表达式 {
+    执行代码块1
+} else {
+    执行代码块2
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;多分支&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;if 条件表达式1 {
+    执行代码1
+} else if 条件表达式2 {
+    执行代码2
+} ... {
+
+} else {
+    执行代码n
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;嵌套分支&lt;code&gt;建议控制在3层以内&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;if 条件表达式x {
+    if 条件表达式y {
+        执行代码1
+    } else {
+        执行代码2
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;switch分支控制&#34;&gt;switch分支控制&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;switch语句用于基于不同的条件执行不同的动作，每一个case分支都是唯一的，从上到下逐一测试，直到匹配为止&lt;/li&gt;
+&lt;li&gt;先执行表达式得到值，然后和case的表达式进行比较。如果相等则匹配成功，执行对应的语句块，然后退出switch控制；如果没有匹配成功，则执行default下的语句块，然后退出switch控制。&lt;/li&gt;
+&lt;li&gt;case后表达式可以有多个，使用逗号间隔&lt;/li&gt;
+&lt;li&gt;case语句块后不需要break，默认会有&lt;/li&gt;
+&lt;li&gt;基本语法：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;switch 表达式 {
+    case 表达式1,表达式2,...:
+        语句块1
+    case 表达式3,表达式4,...:
+        语句块2
+    // 可以多个case语句
+    default:
+        默认语句块
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&#34;注意细节&#34;&gt;注意细节&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;switch/case后是一个表达式（即&lt;strong&gt;常量值&lt;/strong&gt;、&lt;strong&gt;变量&lt;/strong&gt;、一个有&lt;strong&gt;返回值的函数&lt;/strong&gt;都可以）&lt;/li&gt;
+&lt;li&gt;case：
+&lt;ol&gt;
+&lt;li&gt;case后的各个表达式的值的数据类型，必须和switch的表达式数据类型一致&lt;/li&gt;
+&lt;li&gt;case后面可以带多个表达式，使用逗号间隔，比如&lt;code&gt;case 表达式1,表达式2,...&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;case后面的表达式为常量值时，不能出现重复&lt;/li&gt;
+&lt;li&gt;case后面不需要带break，程序匹配到一个case后就会执行对应的代码块，然后退出switch，如果一个也匹配不到则执行default，因此&lt;strong&gt;default语句时必须的&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;穿透fallthrough，即在case语句块后面增加fallthrough，则会继续执行下一个case，这种做法也叫switch穿透&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;switch
+&lt;ol&gt;
+&lt;li&gt;switch后可以不带表达式，类似&lt;code&gt;if else&lt;/code&gt;分支来使用&lt;/li&gt;
+&lt;li&gt;switch后可以直接声明或者定义一个变量，分号结束，例如&lt;code&gt;switch grade :=90; {}&lt;/code&gt;，但此种方法不推荐使用&lt;/li&gt;
+&lt;li&gt;switch可以用于type-switch来判断某个interface变量中实际指向的变量类型&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1629275014087.png&#34; alt=&#34;type-switch&#34; loading=&#34;lazy&#34;&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
+import (
+	&amp;quot;fmt&amp;quot;
+)
+
+func main() {
+
+	// 	案例：
+	// 请编写一个程序，该程序可以接收一个字符，比如: a,b,c,d,e,f,g
+	// a表示星期一，b表示星期二，c表示星期三，根据用户的输入显示相应的信息
+	// 要求使用 switch 语句完成
+	var key byte
+	fmt.Println(&amp;quot;请输入一个字符 a,b,c：&amp;quot;)
+	fmt.Scanf(&amp;quot;%c&amp;quot;, &amp;amp;key)
+	switch key { //将语法现象
+		case &#39;a&#39;:
+			fmt.Println(&amp;quot;今天是周一&amp;quot;)
+		case &#39;b&#39;:
+			fmt.Println(&amp;quot;今天是周二&amp;quot;)
+		case &#39;c&#39;:
+			fmt.Println(&amp;quot;今天是周三&amp;quot;)
+		default:
+			fmt.Println(&amp;quot;输入有误...&amp;quot;)
+	}
+
+	// case后可以有多个表达式
+	var n1 int32 = 51
+	var n2 int32 = 20
+	switch n1 {
+		case n2,10,5 :
+			fmt.Println(&amp;quot;ok1&amp;quot;)
+		case 90,100,51 :  // 此处不能再写10、5，否则和上面重复
+			fmt.Println(&amp;quot;ok2~&amp;quot;)
+	}
+
+
+	//switch 后也可以不带表达式，类似 if --else分支来使用
+	var age int = 10
+	switch {
+		case age == 10 :
+			fmt.Println(&amp;quot;age 为 10&amp;quot;)
+		case age == 20 :
+			fmt.Println(&amp;quot;age 为 20&amp;quot;)
+		default :
+			fmt.Println(&amp;quot;没有匹配到&amp;quot;)
+	}
+
+	//case 中也可以对 范围进行判断
+	var score int = 90
+	switch {
+		case score &amp;gt; 90 :
+			fmt.Println(&amp;quot;成绩优秀..&amp;quot;)
+		case score &amp;gt;=70 &amp;amp;&amp;amp; score &amp;lt;= 90 :
+			fmt.Println(&amp;quot;成绩优良...&amp;quot;)
+		case score &amp;gt;= 60 &amp;amp;&amp;amp; score &amp;lt; 70 :
+			fmt.Println(&amp;quot;成绩及格...&amp;quot;)
+		default :
+			fmt.Println(&amp;quot;不及格&amp;quot;)
+	}
+
+
+	//switch 后也可以直接声明/定义一个变量，分号结束，不推荐
+	switch grade := 90; { // 在golang中，可以这样写
+		case grade &amp;gt; 90 :
+			fmt.Println(&amp;quot;成绩优秀~..&amp;quot;)
+		case grade &amp;gt;=70 &amp;amp;&amp;amp; grade &amp;lt;= 90 :
+			fmt.Println(&amp;quot;成绩优良~...&amp;quot;)
+		case grade &amp;gt;= 60 &amp;amp;&amp;amp; grade &amp;lt; 70 :
+			fmt.Println(&amp;quot;成绩及格~...&amp;quot;)
+		default :
+			fmt.Println(&amp;quot;不及格~&amp;quot;)
+	}
+
+	//switch 的穿透 fallthrought
+	var num int = 10
+	switch num {
+		case 10:
+			fmt.Println(&amp;quot;ok1&amp;quot;)
+			fallthrough //默认只能穿透一层
+		case 20:
+			fmt.Println(&amp;quot;ok2&amp;quot;)
+			fallthrough
+		case 30:
+			fmt.Println(&amp;quot;ok3&amp;quot;)
+		default:
+			fmt.Println(&amp;quot;没有匹配到..&amp;quot;)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&#34;switch和if的比较&#34;&gt;switch和if的比较&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;判断的具体数值不多，而且符合整数、浮点数、字符、字符串这几种类型，建议使用switch&lt;/li&gt;
+&lt;li&gt;对区间的判断或结果为bool型，建议使用if&lt;code&gt;if使用范围更广&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;循环控制&#34;&gt;循环控制&lt;/h1&gt;
+&lt;h2 id=&#34;for循环控制&#34;&gt;for循环控制&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// 语法1：
+for 循环变量初始化；循环条件；循环变量迭代 {
+    循环操作
+}
+// 其中 循环变量初始化 和 循环变量迭代 可以不在for之后，这两个可以写在其他地方，例如语法2
+
+// 语法2：
+循环变量初始化
+for 循环条件 {
+    循环操作
+    循环变量迭代
+}
+
+// 语法3：无限循环，必须配合break语句使用
+for {
+    循环操作
+}
+// 等价于 for ;; {}
+
+// 语法4：for-range方式，遍历字符串和数组
+for index, val := range 变量 {
+    fmt.Printf(&amp;quot;索引%d，值%c&amp;quot;, index, val)
+}
+
+
+// 举例：
+
+// 语法1：
+for i := 1; i &amp;lt;= 10; i++{
+    fmt.PrintIn(&amp;quot;这是循环体for&amp;quot;)
+}
+
+// 语法2：
+i := 1
+for i &amp;lt;= 10 {
+    fmt.PrintIn(&amp;quot;这是循环体for&amp;quot;)
+     i++
+}
+
+//  语法3：无限循环
+i := 1
+for {
+    if i &amp;lt;= 10 {
+        fmt.PrintIn(&amp;quot;这是循环体for&amp;quot;,i)
+    } else {
+        break
+    }
+     i++
+}
+
+// 语法4：遍历字符串
+//   传统方式遍历字符串：
+var str string = &amp;quot;hello,world!&amp;quot;
+for i := 0; i &amp;lt; len(str); i++ {
+    fmt.Printf(&amp;quot;%c \n&amp;quot;,str[i]) //需要使用下标
+}
+//   for-range方式遍历字符串：
+var str string = &amp;quot;hello,world!&amp;quot;
+for index, value := range str {
+    fmt.Printf(&amp;quot;索引位置%d\t值为%c\n&amp;quot;,index,value)
+}
+//      如果字符串含有中文，就会出现乱码，原因是对字符串的遍历是按照字节来遍历的，而一个汉字对应的是3个字节，解决方法就是将string转为切片rune
+var str string = &amp;quot;hello,world!我是老北京人儿&amp;quot;
+str2 := []rune(str)
+for index, value := range str2 {
+    fmt.Printf(&amp;quot;索引位置 %d \t 值为 %c\n&amp;quot;,index,value)
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;for循环的4个要素&lt;/strong&gt;，其&lt;strong&gt;执行顺序&lt;/strong&gt;如下：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;循环变量初始化&lt;code&gt;i := 1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;循环条件&lt;code&gt;i &amp;lt;= 10&lt;/code&gt;，是返回一个布尔值的表达式&lt;/li&gt;
+&lt;li&gt;循环操作（即循环体）&lt;code&gt;fmt.PrintIn(&amp;quot;这是循环体for&amp;quot;)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;循环变量迭代&lt;code&gt;i++&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;while和dowhile的实现&#34;&gt;while和do...while的实现&lt;/h2&gt;
+&lt;p&gt;golang中没有while循环，其实现方式为for循环中的语法3--无限循环&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// while实现
+循环变量初始化
+for {
+    if 循环条件 {
+        break // 跳出for循环
+    }
+    循环操作
+    循环变量迭代
+}
+
+// do...while实现
+循环变量初始化
+for {
+    循环操作
+    循环变量迭代
+    if 循环条件 {
+        break // 跳出for循环
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;嵌套循环一般使用两层，最多不要超过三层&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;跳转控制语句&#34;&gt;跳转控制语句&lt;/h1&gt;
+&lt;h2 id=&#34;break&#34;&gt;break&lt;/h2&gt;
+&lt;h2 id=&#34;continue&#34;&gt;continue&lt;/h2&gt;
+&lt;h2 id=&#34;goto&#34;&gt;goto&lt;/h2&gt;
+&lt;h2 id=&#34;return&#34;&gt;return&lt;/h2&gt;
+">golang 第五章 程序流程控制</a>
+      </div>
+      
+      <div class="item">
+        <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/golang-di-si-zhang-yun-suan-fu/"" data-c="
+          &lt;h1 id=&#34;算术运算符&#34;&gt;算术运算符&lt;/h1&gt;
+&lt;p&gt;正号&lt;code&gt;+&lt;/code&gt;，负号&lt;code&gt;-&lt;/code&gt;，加&lt;code&gt;+&lt;/code&gt;，减&lt;code&gt;-&lt;/code&gt;，乘&lt;code&gt;-&lt;/code&gt;，除&lt;code&gt;/&lt;/code&gt;，取模（取余）&lt;code&gt;%&lt;/code&gt;，自增&lt;code&gt;++&lt;/code&gt;，自减&lt;code&gt;--&lt;/code&gt;，字符串相加&lt;code&gt;+&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	//演示 / 的使用
+	//如果运算的数都是整数，那么除后，去掉小数部分，保留整数部分
+	fmt.Println(11 / 4)	    // 2
+
+	var n1 float32 = 11 / 4
+	fmt.Println(n1)	    // 2
+
+	//如果我们希望保留小数部分，则需要有浮点数参与运算
+	var n2 float32 = 11.0 / 4
+	fmt.Println(n2)	    // 2.75
+
+	// 演示  % 的使用
+	// 看一个公式 a % b = a - a / b * b
+	fmt.Println(&amp;quot;10%3=&amp;quot;, 10 % 3)    // 1
+	fmt.Println(&amp;quot;-10%3=&amp;quot;, -10 % 3)  //  -10 - (-10) / 3 * 3 = -10 - (-9) = -1
+	fmt.Println(&amp;quot;10%-3=&amp;quot;, 10 % -3)  // 1
+	fmt.Println(&amp;quot;-10%-3=&amp;quot;, -10 % -3)    // -1
+
+	// ++ 和 --的使用
+	var i int = 10
+	i++ // 等价 i = i + 1
+	fmt.Println(&amp;quot;i=&amp;quot;, i)    // 11
+	i-- // 等价 i = i - 1
+	fmt.Println(&amp;quot;i=&amp;quot;, i)    // 10
+
+	if i &amp;gt; 0 {
+		fmt.Println(&amp;quot;ok&amp;quot;)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol&gt;
+&lt;li&gt;对于除号&lt;code&gt;\&lt;/code&gt;，整数除和小数除是有区别的：整数之间做除法时，只保留整数部分而舍弃小数部分&lt;/li&gt;
+&lt;li&gt;对于取模&lt;code&gt;%&lt;/code&gt;，其本质为&lt;code&gt;a % b = a - a / b * b&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;自增&lt;code&gt;++&lt;/code&gt;和自减&lt;code&gt;--&lt;/code&gt;只能当作一个独立的语言使用，且只能写在变量的后面，详细看下面的例子：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	
+	//在golang中，++ 和 -- 只能独立使用.
+	var i int = 8
+	var a int 
+	a = i++ //错误，i++只能独立使用 
+	a = i-- //错误, i--只能独立使用
+
+	if i++ &amp;gt; 0 {
+		fmt.Println(&amp;quot;ok&amp;quot;)
+	}
+
+	var i int = 1
+	i++
+	++i // 错误，在golang没有 前++
+	i-- 
+	--i // 错误，在golang没有 前--
+	fmt.Println(&amp;quot;i=&amp;quot;, i)
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;关系运算符比较运算符-逻辑运算符&#34;&gt;关系运算符（比较运算符）、逻辑运算符&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;关系运算符&lt;br&gt;
+等于&lt;code&gt;==&lt;/code&gt;，不等于&lt;code&gt;!=&lt;/code&gt;，小于&lt;code&gt;&amp;lt;&lt;/code&gt;，大于&lt;code&gt;&amp;gt;&lt;/code&gt;，小于等于&lt;code&gt;&amp;lt;=&lt;/code&gt;，大于等于&lt;code&gt;&amp;gt;=&lt;/code&gt;&lt;br&gt;
+关系表达式的结果都是bool型，即true或者false&lt;/li&gt;
+&lt;li&gt;逻辑运算符&lt;br&gt;
+逻辑与（短路与）&lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt;，逻辑或（短路或）&lt;code&gt;||&lt;/code&gt;，逻辑非&lt;code&gt;!&lt;/code&gt;&lt;br&gt;
+逻辑与，如果第一个条件为false，则&lt;strong&gt;第二个条件不会判断&lt;/strong&gt;，最终为false&lt;br&gt;
+逻辑或，如果第一个条件为true，则&lt;strong&gt;第二个条件不会判断&lt;/strong&gt;，最终为true&lt;br&gt;
+因此，在写逻辑判断关系式的时候，尽量把计算简单的写在前面，节省计算量&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;//声明一个函数(测试)
+func test() bool {
+	fmt.Println(&amp;quot;test....&amp;quot;)
+	return true
+}
+
+func main() {
+	var i int = 10
+
+	//短路与
+	//说明 因为  i &amp;lt; 9 为 false ,因此后面的 test() 就不执行
+	if i &amp;lt; 9 &amp;amp;&amp;amp; test() {
+		fmt.Println(&amp;quot;ok...&amp;quot;)
+	}	//没有输出
+	if i &amp;gt; 9 || test() {
+		fmt.Println(&amp;quot;hello...&amp;quot;)
+	}	// hello...
+
+	//演示逻辑运算符的使用  &amp;amp;&amp;amp;
+	var age int = 40
+	if age &amp;gt; 30 &amp;amp;&amp;amp; age &amp;lt; 50 {
+		fmt.Println(&amp;quot;ok1&amp;quot;)
+	}
+	if age &amp;gt; 30 &amp;amp;&amp;amp; age &amp;lt; 40 {
+		fmt.Println(&amp;quot;ok2&amp;quot;)
+	}
+
+	//演示逻辑运算符的使用  ||
+
+	if age &amp;gt; 30 || age &amp;lt; 50 {
+		fmt.Println(&amp;quot;ok3&amp;quot;)
+	}
+	if age &amp;gt; 30 || age &amp;lt; 40 {
+		fmt.Println(&amp;quot;ok4&amp;quot;)
+	}
+
+	//演示逻辑运算符的使用  !
+
+	if age &amp;gt; 30 {
+		fmt.Println(&amp;quot;ok5&amp;quot;)
+	}
+	if !(age &amp;gt; 30) {
+		fmt.Println(&amp;quot;ok6&amp;quot;)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;赋值运算符-位运算符-其他运算符&#34;&gt;赋值运算符、位运算符、其他运算符&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;赋值运算符&lt;br&gt;
+赋值&lt;code&gt;=&lt;/code&gt;，相加后赋值&lt;code&gt;+=&lt;/code&gt;，相减后赋值&lt;code&gt;-=&lt;/code&gt;，相乘后赋值&lt;code&gt;*=&lt;/code&gt;，相除后赋值&lt;code&gt;/=&lt;/code&gt;，求余后赋值&lt;code&gt;%=&lt;/code&gt;，左移后赋值&lt;code&gt;&amp;lt;&amp;lt;=&lt;/code&gt;，右移后赋值&lt;code&gt;&amp;gt;&amp;gt;=&lt;/code&gt;，按位与后赋值&lt;code&gt;&amp;amp;=&lt;/code&gt;，按位异或后赋值&lt;code&gt;^=&lt;/code&gt;，按位或后赋值&lt;code&gt;|=&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;位运算符&lt;br&gt;
+按位与&lt;code&gt;&amp;amp;&lt;/code&gt;，按位或&lt;code&gt;|&lt;/code&gt;，按位异或&lt;code&gt;^&lt;/code&gt;，左移&lt;code&gt;&amp;lt;&amp;lt;&lt;/code&gt;，右移&lt;code&gt;&amp;gt;&amp;gt;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;其他运算符&lt;br&gt;
+返回变量存储位置&lt;code&gt;&amp;amp;&lt;/code&gt;，指针变量&lt;code&gt;*&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;code&gt;go不支持三元运算，因为go的设计理念是“一种事情有且仅有一种方法完成”&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;运算符优先级&#34;&gt;运算符优先级&lt;/h1&gt;
+&lt;figure data-type=&#34;image&#34; tabindex=&#34;1&#34;&gt;&lt;img src=&#34;https://fqj-web.github.io/post-images/1628734899757.png&#34; alt=&#34;运算符优先级&#34; loading=&#34;lazy&#34;&gt;&lt;/figure&gt;
+&lt;h1 id=&#34;获取键盘输入&#34;&gt;获取键盘输入&lt;/h1&gt;
+&lt;p&gt;调用fmt包的&lt;code&gt;fmt.Scanln()&lt;/code&gt;或者&lt;code&gt;fmt.Scanf()&lt;/code&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;ScanIn&lt;/code&gt;类似Scan，但会在换行时才停止扫描，最后一个条目必须有换行或者到达结束位置&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Scanf&lt;/code&gt;从标准输入扫描文本，根据format参数指定的格式  将成功读取的空白分隔的值  保存进传递给本函数的参数。返回成功扫描的条目个数和遇到的任何错误&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main() {
+	//从控制台接收用户信息，【姓名、年龄、薪水、是否通过考试 】
+
+	//先声明需要的变量
+	var name string
+	var age byte
+	var sal float32
+	var isPass bool
+
+	//方式1 fmt.Scanln
+	fmt.Println(&amp;quot;请输入姓名： &amp;quot;)  //当程序执行到 fmt.Scanln(&amp;amp;name),程序会停止在这里，等待用户输入，并回车
+	fmt.Scanln(&amp;amp;name)
+	fmt.Println(&amp;quot;请输入年龄： &amp;quot;)
+	fmt.Scanln(&amp;amp;age)
+	fmt.Println(&amp;quot;请输入薪水： &amp;quot;)
+	fmt.Scanln(&amp;amp;sal)
+	fmt.Println(&amp;quot;请输入是否通过考试： &amp;quot;)
+	fmt.Scanln(&amp;amp;isPass)
+	fmt.Printf(&amp;quot;名字是： %v \n 年龄是： %v \n 薪水是： %v \n 是否通过考试： %v \n\n\n\n\n&amp;quot;, name, age, sal, isPass)
+
+	//方式2:fmt.Scanf,可以按指定的格式输入
+	fmt.Println(&amp;quot;请依次输入你的姓名、年龄、薪水、是否通过考试， 并使用空格隔开&amp;quot;)
+	fmt.Scanf(&amp;quot;%s %d %f %t&amp;quot;, &amp;amp;name, &amp;amp;age, &amp;amp;sal, &amp;amp;isPass)
+	fmt.Printf(&amp;quot;名字是： %v \n年龄是： %v \n 薪水是： %v \n 是否通过考试： %v \n&amp;quot;, name, age, sal, isPass)
+}
+
+//请输入姓名：
+//小弟
+//请输入年龄：
+//20
+//请输入薪水：
+//20000
+//请输入是否通过考试：
+//true
+//名字是： 小弟
+//年龄是： 20
+//薪水是： 20000
+//是否通过考试： true
+//
+//
+//
+//
+//请依次输入你的姓名、年龄、薪水、是否通过考试， 并使用空格隔开
+//小弟 21 30000 true
+//名字是： 小弟
+//年龄是： 21
+//薪水是： 30000
+//是否通过考试： true 
+&lt;/code&gt;&lt;/pre&gt;
+">golang 第四章 运算符</a>
+      </div>
+      
+      <div class="item">
+        <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/nginx-pei-zhi-fang-wen-yong-hu-ming-he-mi-ma/"" data-c="
+          &lt;p&gt;使用nginx&lt;sub&gt;直接使用的phpstudy的小皮面板&lt;/sub&gt;搭建了一些站点，但是由于站点内容或者安全的关系，并不想让所有人都能正常访问，那么可以设置访问认证，让掌握用户名和密码才能正常访问。&lt;br&gt;
+在nginx下，提供了ngx_http_auth_basic_module模块实现让用户只有输入正确的用户名密码才允许访问web内容，默认情况下，nginx已经安装了该模块。&lt;br&gt;
+生成密码可以使用&lt;code&gt;htpasswd&lt;/code&gt;，或者使用&lt;code&gt;openssl&lt;/code&gt; ，下面以htpasswd为例&lt;/p&gt;
+&lt;h1 id=&#34;htpasswd&#34;&gt;htpasswd&lt;/h1&gt;
+&lt;h2 id=&#34;参数介绍&#34;&gt;参数介绍&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 常用参数
+-c：创建一个加密文件
+-n：不更新加密文件，只将htpasswd命令加密后的用户名密码显示在屏幕上
+-m：默认htpassswd命令采用MD5算法对密码进行加密
+-d：htpassswd命令采用CRYPT算法对密码进行加密
+-p：htpassswd命令不对密码进行进行加密，即明文密码
+-s：htpassswd命令采用SHA算法对密码进行加密
+-b：htpassswd命令行中一并输入用户名和密码而不是根据提示输入密码
+-D：删除指定的用户
+
+# 常用组合
+#   添加用户并且创建密码文件
+htpasswd -bc [passwdfile] [username] [passwd] 
+htpasswd -bc ./.passwd sandu pass   # 在当前目录下生成一个.passwd文件，用户名sandu，密码：pass，默认采用MD5加密方式
+
+#   在原有密码文件中增加下一个用户
+htpasswd -b [passedfile] [username] [passwd]
+htpasswd -b ./.passwd sandu1 pass   # 去掉c选项，即可在第一个用户之后添加第二个用户
+#   删除用户
+htpasswd -D [passwdfile] [username]
+htpasswd -D .passwd sandu
+
+# 修改密码
+htpasswd -D .passwd sandu
+htpasswd -b .passwd sandu pass
+
+# 不更新密码文件，只显示加密后的用户名和密码
+htpasswd -nb sandu pass
+
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;步骤&#34;&gt;步骤&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;安装&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;yum -y install httpd-tools
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;生成密码文件&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 设置用户名和密码，并把用户名、密码保存到指定文件中
+htpasswd -bc /www/admin/pwd/node80.pwd node80 123456
+# 密码文件/www/admin/pwd/node80.pwd，用户名node80，密码123456
+# 查看密码文件内容
+cat /www/admin/pwd/node80.pwd
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;修改nginx配置文件&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 此处可在小皮面板的管理界面修改或者在系统中找到对应的配置文件进行修改
+# 小皮面板nginx模块的默认配置文件位置为/usr/local/phpstudy/vhost/nginx/，推荐在管理界面进行修改
+# 在相应站点下面添加如下内容：
+server {
+   listen 80;
+   server_name  localhost;
+   .......
+ 
+   #新增下面两行
+   # 验证时的提示信息 
+   auth_basic &amp;quot;请输入xxx站点的访问密码&amp;quot;; 
+   # 验证时需要的密码文件
+   auth_basic_user_file /www/admin/pwd/node80.pwd;
+ 
+   location /{
+   .......
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;4&#34;&gt;
+&lt;li&gt;验证&lt;/li&gt;
+&lt;/ol&gt;
+">Nginx配置访问用户名和密码</a>
+      </div>
       
       <div class="item">
         <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/win10_lstb_2016-zui-hou-yi-ci-jing-jian/"" data-c="
@@ -1952,17 +2829,18 @@ rpm -ivh resilio-sync-2.7.2.1375-1.x86_64.rpm
 2. 修改配置文件&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;vim /etc/resilio-sync/config.json
     {
-        &amp;quot;storage_path&amp;quot;: &amp;quot;/var/lib/resilio-sync/&amp;quot;,
+        &amp;quot;storage_path&amp;quot;: &amp;quot;/resilio-sync&amp;quot;,
         &amp;quot;pid_file&amp;quot;: &amp;quot;/var/run/resilio-sync/sync.pid&amp;quot;,
-        &amp;quot;use_upnp&amp;quot;: true,
-        &amp;quot;download_limit&amp;quot;: 0,
-        &amp;quot;upload_limit&amp;quot;: 10240,
-        &amp;quot;directory_root&amp;quot;: &amp;quot;/data/sync/&amp;quot;,
+        &amp;quot;listening_port&amp;quot; : 12345, 
+        //&amp;quot;use_upnp&amp;quot;: true,
+        //&amp;quot;download_limit&amp;quot;: 0,
+        //&amp;quot;upload_limit&amp;quot;: 10240,
+        //&amp;quot;directory_root&amp;quot;: &amp;quot;/data/sync/&amp;quot;,
         &amp;quot;webui&amp;quot;: {
-            &amp;quot;listen&amp;quot;: &amp;quot;0.0.0.0:8888&amp;quot;,
-            &amp;quot;login&amp;quot;: &amp;quot;admin&amp;quot;,
-            &amp;quot;password&amp;quot;: &amp;quot;admin123456&amp;quot;,
-            &amp;quot;allow_empty_password&amp;quot;: false
+            &amp;quot;listen&amp;quot;: &amp;quot;0.0.0.0:80&amp;quot;,
+            // &amp;quot;login&amp;quot;: &amp;quot;admin&amp;quot;,
+            // &amp;quot;password&amp;quot;: &amp;quot;admin123456&amp;quot;,
+            // &amp;quot;allow_empty_password&amp;quot;: false
         }
     }
 &lt;/code&gt;&lt;/pre&gt;
@@ -1978,6 +2856,9 @@ systemctl enable resilio-sync
 &lt;li&gt;第一次进入可以看到界面如下，我们选择右上角的设置按钮。选择&lt;code&gt;General&lt;/code&gt;修改&lt;code&gt;Language&lt;/code&gt;为&lt;code&gt;中文&lt;/code&gt;，然后刷新页面&lt;/li&gt;
 &lt;li&gt;在服务器上&lt;code&gt;/data/sync/&lt;/code&gt;路径下创建文件&lt;code&gt;ResilioSyncPro.btskey&lt;/code&gt; 并填写如下内容：&lt;code&gt;以下许可证为网络获取，仅供学习交流使用，如商业使用请官网购买许可证&lt;/code&gt;&lt;/li&gt;
 &lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;修改hosts，防止证书验证导致pro丢失，在hosts文件中添加：127.0.0.1 license.resilio.com&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;tos1_eyJzIjogIm5xNjRmNGgrWDhxWHFiaWRodEtyTWdNcEVaMHdYaUJLbExwSWFwSDUxMzkyaHdqMFFpQWJOTTFGd2JGWGpJQ0FhV2w4V3ZidVpPenpITXZmNTRLWU1XVGVsVFZjS3JGQUpYMmVUMGttT2lCMm8zQ1BjVFd2VWlCLzRsTTlQN1FsalVSVzREMVFNUktWcEhwaG5IVzIvZmdqN05MaThmMnhNa1NDNERwRVVpQ0pXZHpPWXFIbW1OMFdOUEt6QWg4RkJoanNvUVNBa1hKN09WS0c5WElkVTczWnNlVWNxWW1WVUo0WDc0S05wYmlYZk0vemlsU2pIK0U5Y3ZMZ092YlplVjlCZXlveDNwT3pRYUJOeFNQT3FYWEpTRHE1bVRhRXMvWGppVGtJV21uVHJudVJnb01DZ0RBOHdBS3RIYjRvVkduWm1jeU8xNlhoQ3dvL2VkeHFxZz09IiwgImQiOiAiZXlKamF5STZJQ0ppZEc5ell6RmZaWGxLYW1ONVNUWkpRMHBJVlZoYVYxRldUakZsVldoWVZrWldNMUpXU2tWVVJURlZZVEZXZFZacVVsUmpNMUp5Wkcxd1FsUkVRVFZWUXpsMVZraGtUVk5wT0hsUFEzUjNUV3hrVjJOck1IaFVhelI1VXpOQ1QyUlhiR3RTYlVwb1ZtNUtURlJZVVRWVFJ6RXpWVVU1TVZwdVdtRlVWbVJ1VVd4Sk1sWXlXbkZsYm14b1ZWaHdlbEV3TVVKamJXaE5XVlYwZFZwVVJYZFRSbEpOVW5wU2JGbHBkRXBVVlRGSlYwUnNWMkV5ZEZSalZFRXdUbTVuTUdKck1WZE5SR2N3VmxWYVRsSnJNVzlqUlVwMFlVUlNlRTFJYkZaWmExRXhVbTFzTUUxSVpIZE5iR3hVWWxob1IyTkVSbE5sVlhkeVVsWm9OV0ZGUlROUmJWSnVWVEZDYUdKSVZrWkxNV3hZVmpGb2FtSjVPVWxSVlRsT1ltMTNNbE5zUlRCYWFsSlFWbXBCZUZRd1VrSlpha1Z5V20wMWRVNXVXblZSTTJnell6RldTazlGTVU1aFNHeFFUREE1TUZOc2JFWldTRkpXVlVaSk1sUkRkRkpXUjJoUlYwUlNjbGxyTlhGTlJHeFpXbmwwYjJGVk1VeFZWMVpVU3pCd2RFNTZVblpUYW14SVpEQnJlVkZ0TVVsalJGWXdWRlZTZEZreWVIcE9WbWhLV1Zkb1MxZEdSa1pqTUhSMVVsaFdlbE13VGpSaVJsSjVUVmR3ZFdOSGFFNWFlbFV3WW0xNGJFOVVhRzlUU0VWeVVWaE5NV1ZZVWxSTlIyTTVVRk5KYzBsRFNtcGFRMGsyU1VOS2JHVlZjSGRaYlRGaFpHdHNjV0l5Wkd4bFZYQTJXa2N4VDFKSFNYbFZiWGhLWVcwNWJsTlhOVTlPVjBwMFZHeEdhbUpVYUhCVVJVNUNZVlpyZVdSSVFtRlJNR3N5VTFWT1MyVkdWblJXVkVKVFltczFjbGt3V2s1TmJVVjNaVVYwYW1Wc1NsaFpla0pyVFVaRmVGRnRlRmRUUlRWNVUxZHNNMW93YkhSV2FsSnFVVEJyTWxOVlVrcGxSVFZGVmxSV1RsWkdhekJVVlZKQ1l6QnNSRk50Y0dwTk1VWndWREpzUW1GWFNqVk5WelZQVmtaYVVGbDZRbTloYkZwelZsZHNUVkV3Um5CYVJXaHpaREZ3VkZOVVdrcFJNSEF6VjJ4b1MyVnRTWGxPVjJocFVUQnNlbE5WVGt0a2JVNUpWVzV3U21GdE9XNWFXR3hMWWxkSmVXVkhkR0ZYUlhCVlYyeGtUMlZXY0ZsVlYyeFFZVlZHY0ZSdGMzaFVNVlpIVjJ4YVZGSkhVa05VV0hCVFYyeEdWbFZVUmxoU1ZGWkhWV3RXVTFWV1VrWk9WVnBYVFZWd1UxUlhjRk5VVmxsNFdqSnNUVkV3Um5CWmVrcFhZVWRTU1ZSWGJGQmhWVVkwV214bmQyTXdiRVJUYlhoc1UwVkdjRlF5YkVKbFZURlZWVlJHVUZaRlZYbFVNRkpDWkRKYVVsQlVNR2xtVVQwOUlpd2dJbWx1Wm04aU9pQjdJbTl5WkdWeVNXUWlPaUFpWVc1aGRXeG1ZVzUxYTJadWIydHViVzF6TURZNWNXbzNOQ0lzSUNKaGNpSTZJREFzSUNKbGVIQWlPaUF5TVRRMU9URTJPREF3TENBaVkzSmxJam9nTVRRNE1UUXlOek00Tnl3Z0luTjJZMGxrSWpvZ0luTjVibU5RY204eElpd2dJbU56ZENJNklDSnZMV2MxTlU1elNHTldWU0lzSUNKemRtTkRiMlJsSWpvZ0luTjVibU5RY204aUxDQWlZMmxrSWpvZ0ltZHFaV295YmlJc0lDSjBlWEJsSWpvZ0luQmxjbk52Ym1Gc0lpd2dJbTl3ZEhNaU9pQjdJbVp2YkdSbGNsTmxZM0psZENJNklDSkJWMFJOVHpSRlUxTkJUbGhCV2xKVE1rMHlORlpCTmtkQlIxSlhWVFJRTlZZaUxDQWljMlZoZEhNaU9pQXhmWDBzSUNKbGVIQWlPaUF5TVRRMU9URTJPREF3ZlE9PSJ9
 &lt;/code&gt;&lt;/pre&gt;
 &lt;ol start=&#34;4&#34;&gt;
@@ -2005,6 +2886,10 @@ chown -R rslsync:rslsync /data/sync/
 &lt;li&gt;登录共享文件夹的服务端，同意节点加入&lt;/li&gt;
 &lt;li&gt;加入节点成功，开始同步&lt;/li&gt;
 &lt;li&gt;点击Sync中共享文件夹名称，进入文件夹可看到与源服务器上同样的文件目录结构，只不过本地文件中所有文件均添加有后缀 .rsls，且文件图标为半透明状。此时双击文件或右键选中文件选择同步到此设备即可下载文件查看使用&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;使用注意事项&#34;&gt;使用注意事项&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;如果只是在自己不同设备间备份个人文件，主键建立分享的时候记得把**&amp;quot;需要时使用中继服务器&amp;quot;**选项去掉，以保个人信息安全&lt;/li&gt;
 &lt;/ol&gt;
 ">使用Resilio Sync部署同步服务器</a>
       </div>
@@ -2186,30 +3071,36 @@ chown -R rslsync:rslsync /data/sync/
 &lt;li&gt;该区域有自己的名称（变量名）和类型（数据类型）&lt;/li&gt;
 &lt;li&gt;golang使用变量的3种方式：
 &lt;ol&gt;
-&lt;li&gt;指定变量类型，声明后若不赋值，则使用默认值&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main()  {
+&lt;li&gt;指定变量类型，声明后若不赋值，则使用默认值&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main()  {
     // int的默认值是0，其他数据类型的默认值在后面介绍
     var i int
     fmt.Println(&amp;quot;i=&amp;quot;,i)
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;/li&gt;
-&lt;li&gt;根据值自行判断变量类型（类型推导）&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main()  {
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;根据值自行判断变量类型（类型推导）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main()  {
     var i = 10.12
     fmt.Println(&amp;quot;i=&amp;quot;,i)
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;/li&gt;
-&lt;li&gt;省略var，&lt;code&gt;:=&lt;/code&gt;左边的变量不应该是已经声明过的，否则会导致编译错误&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main()  {
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;省略var，&lt;code&gt;:=&lt;/code&gt;左边的变量不应该是已经声明过的，否则会导致编译错误&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main()  {
     i := &amp;quot;tom&amp;quot;
     fmt.Println(&amp;quot;i=&amp;quot;,i)
 }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/li&gt;
-&lt;/ol&gt;
-&lt;/li&gt;
 &lt;li&gt;多变量声明
 &lt;ol&gt;
-&lt;li&gt;一次性声明多个局部变量&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main()  {
+&lt;li&gt;一次性声明多个局部变量&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main()  {
     // 方式1：
     // var x, y, z int
     // fmt.Println(&amp;quot;x=&amp;quot;,x, &amp;quot;y=&amp;quot;,y, &amp;quot;z=&amp;quot;,z)
@@ -2223,34 +3114,691 @@ chown -R rslsync:rslsync /data/sync/
     fmt.Println(&amp;quot;x=&amp;quot;,x, &amp;quot;y=&amp;quot;,y, &amp;quot;z=&amp;quot;,z)
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;/li&gt;
-&lt;li&gt;一次性声明多个全局变量&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// 方法1：
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;一次性声明多个全局变量&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// 方法1：
 //var x = 100
 //var y = &amp;quot;tom&amp;quot;
 //var z = 888
 
 // 方法2：
 var(
-   x = 100
-   y = &amp;quot;tom&amp;quot;
-   z = 888
+    x = 100
+    y = &amp;quot;tom&amp;quot;
+    z = 888
 )
 
 func main()  {
-   fmt.Println(&amp;quot;x=&amp;quot;,x, &amp;quot;y=&amp;quot;,y, &amp;quot;z=&amp;quot;,z)
+    fmt.Println(&amp;quot;x=&amp;quot;,x, &amp;quot;y=&amp;quot;,y, &amp;quot;z=&amp;quot;,z)
 }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/li&gt;
-&lt;/ol&gt;
-&lt;/li&gt;
 &lt;li&gt;该区域的数据值可以&lt;strong&gt;在同一类型范围内不断变化&lt;/strong&gt;&lt;/li&gt;
 &lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
+import &amp;quot;fmt&amp;quot;
+func main () {
+    var i int =10
+    i = 20
+    i = 30
+    fmt.Printf(&amp;quot;i=&amp;quot;,i)
+    i = 1.2  // i的类型变为float，不能改变数据类型
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;6&#34;&gt;
+&lt;li&gt;变量在同一作用域（在一个函数或者代码块）内不能重名&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	var i int = 10
+	i := 30 // 变量名称重复
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;7&#34;&gt;
+&lt;li&gt;&lt;strong&gt;变量&lt;/strong&gt;=&lt;strong&gt;变量名&lt;/strong&gt;+&lt;strong&gt;数据类型&lt;/strong&gt;+&lt;strong&gt;值&lt;/strong&gt;（自定义值或者默认值）&lt;/li&gt;
+&lt;li&gt;golang的变量如果没有赋初始值，编译器会使用默认值，比如int默认值为0、string默认值为空串、float默认值为0&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;变量的声明-初始化和赋值&#34;&gt;变量的声明、初始化和赋值&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;声明变量&lt;br&gt;
+基本语法&lt;code&gt;var 变量名 数据类型&lt;/code&gt;或者&lt;code&gt;var 变量名 := 变量初始值（自动推导出变量类型）&lt;/code&gt;&lt;br&gt;
+例如&lt;code&gt;var a int&lt;/code&gt;声明int类型的变量a，&lt;code&gt;var num1 float32&lt;/code&gt;声明一个单精度类型的变量num1&lt;/li&gt;
+&lt;li&gt;初始化变量&lt;br&gt;
+即在声明变量的时候就赋值&lt;br&gt;
+例如&lt;code&gt;var a int = 45&lt;/code&gt;，如果声明时就赋值，可以省略数据类型&lt;code&gt;var a = 45&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;变量赋值&lt;br&gt;
+声明变量时不初始化&lt;code&gt;var a int&lt;/code&gt;，然后再赋值&lt;code&gt;a = 45&lt;/code&gt;，即变量赋值&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;程序中使用&#34;&gt;程序中“+”使用&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;当左右两边都是数值型时，则做加法运算&lt;/li&gt;
+&lt;li&gt;当左右两边都是字符串时，则做字符串拼接&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;数据类型基本介绍&#34;&gt;数据类型基本介绍&lt;/h1&gt;
+&lt;p&gt;数据类型分为两大类，基本数据类型和派生/复杂数据类型：&lt;/p&gt;
+&lt;h2 id=&#34;1-基本数据类型&#34;&gt;1. 基本数据类型&lt;/h2&gt;
+&lt;h3 id=&#34;分类&#34;&gt;分类&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;数值型
+&lt;ol&gt;
+&lt;li&gt;整数类型
+&lt;ol&gt;
+&lt;li&gt;int（有符号）
+&lt;ol&gt;
+&lt;li&gt;int8，有符号，占1字节，范围&lt;code&gt;-2^7~2^7-1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;int16，有符号，占2字节，范围&lt;code&gt;-2^15~2^15-1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;int32，有符号，占4字节，范围&lt;code&gt;-2^31~2^31-1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;int64，有符号，占8字节，范围&lt;code&gt;-2^63~2^63-1&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;uint（无符号）
+&lt;ol&gt;
+&lt;li&gt;uint8，无符号，占1字节，范围&lt;code&gt;0~2^8-1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;uint16，无符号，占2字节，范围&lt;code&gt;0~2^16-1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;uint32，无符号，占4字节，范围&lt;code&gt;0~2^32-1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;uint64，无符号，占8字节，范围&lt;code&gt;0~2^64-1&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;常用类型说明
+&lt;ol&gt;
+&lt;li&gt;int，有符号
+&lt;ol&gt;
+&lt;li&gt;32位系统占4字节，范围&lt;code&gt;-2^31~2^31-1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;64位系统占8字节，范围&lt;code&gt;-2^63~2^63-1&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;uint，无符号
+&lt;ol&gt;
+&lt;li&gt;32位系统占4字节，范围&lt;code&gt;0~2^32-1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;64位系统占8字节，范围&lt;code&gt;0~2^64-1&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;rune，等价int32，表示一个Unicode码&lt;/li&gt;
+&lt;li&gt;byte，等价uint8，但需要存储字符时选用byte&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;浮点类型
+&lt;ol&gt;
+&lt;li&gt;float32，单精度，占4字节&lt;/li&gt;
+&lt;li&gt;float64，双精度，占8字节&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;字符型（没有专门的字符型，使用byte来保存的那个字母字符）&lt;/li&gt;
+&lt;li&gt;布尔型bool，只允许取值true或者false，占1字节，适用于逻辑运算，一般用于流程控制&lt;/li&gt;
+&lt;li&gt;字符串string&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;整型使用细节&#34;&gt;整型使用细节&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;整数类型分有符号和无符号，int和uint的大小和系统有关&lt;/li&gt;
+&lt;li&gt;整型默认声明为int型（即推导类型时，默认为int），例如&lt;code&gt;var n1 = 100&lt;/code&gt;，中的变量n1的数据类型默认为int&lt;/li&gt;
+&lt;li&gt;查看某个变量的字节大小和数据类型&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	var n2 int64 = 10
+    // %T查看变量的类型；unsafe.Sizeof()是unsafe包的一个函数，返回变量的占用字节数
+	fmt.Printf(&amp;quot;n2 的类型 %T , n2 占用的字节数 %d&amp;quot;,n2,unsafe.Sizeof(n2))
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;4&#34;&gt;
+&lt;li&gt;整型变量在使用时，原则是保小不保大，即在保证程序正确运行下，尽量使用占用空间小的数据类型，例如年龄可以使用byte类型&lt;/li&gt;
+&lt;li&gt;bit计算机中最小的存储单位，byte是计算机中存储的基本单元&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;浮点型使用细节&#34;&gt;浮点型使用细节&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;浮点数在机器中存放形式：浮点数=符号位+指数位+尾数位&lt;code&gt;浮点数都是有符号的&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;尾数部分可能丢失，造成精度损失&lt;code&gt;float64的精度比float32的要准确，如果要保存精度高的数据，则首选float64。通常情况下也建议使用float64&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;浮点类型有固定的范围和字段长度，不受具体OS的影响&lt;/li&gt;
+&lt;li&gt;浮点型默认声明位float64类型&lt;/li&gt;
+&lt;li&gt;浮点型常量有两种表示形式：十进制&lt;sub&gt;例如5.12&lt;/sub&gt;和科学计数法&lt;sub&gt;例如5.12e2&lt;/sub&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;字符型使用细节&#34;&gt;字符型使用细节&lt;/h3&gt;
+&lt;p&gt;golang中没有专门的字符串类型，如果要存储单个字符（字母），一般使用byte来保存。&lt;br&gt;
+字符串就是一串固定长度的字符串连接起来的字符序列。go的字符产是由单个字节连接起来的，也就是说对于传统的字符串是由字符组成的，而go的字符串不同，&lt;strong&gt;它是由字节组成的&lt;/strong&gt;。&lt;br&gt;
+&lt;code&gt;byte类型的值使用的是单引号，而不是双引号。单引号代表byte，双引号是字符串string&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	var c1 byte = &#39;a&#39;
+	var c2 byte = &#39;1&#39;
+
+	// 当直接输出byte值，输出的是对应字符的ASCII码值
+	fmt.Printf(&amp;quot;c1=&amp;quot;,c1,&amp;quot;c2=&amp;quot;,c2)
+
+	// 如果希望输出对应的字符，则需要使用格式化输出
+	fmt.Printf(&amp;quot;\nc1=%c c2=%c\n&amp;quot;,c1,c2)
+
+	// var c3 byte = &#39;我&#39; //overflow溢出，“我”类型为rune(等价int32)
+	var c3 int = &#39;我&#39;
+	fmt.Printf(&amp;quot;c3=%c c3对应的码值%d&amp;quot;,c3,c3)
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol&gt;
+&lt;li&gt;如果保存的字符在ASCII码表中，比如0-9、a-z、A-Z直接可以保存为byte；如果对应的码值大于255，则需要使用int类型保存；如果需要输出字符而不是码值，则需要进行格式化输出，即&lt;code&gt;fmt.Printf(&amp;quot;%c&amp;quot;,c1...)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;字符常量是用单引号&lt;code&gt;&#39;&#39;&lt;/code&gt;括起来的单个字符，例如&lt;code&gt;var c1 byte = &#39;a&#39;&lt;/code&gt;、&lt;code&gt;var c2 int = &#39;中&#39;&lt;/code&gt;、&lt;code&gt;var c3 byte = &#39;9&#39;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;golang使用utf-8编码，查询字符对应的utf-8编码&lt;a href=&#34;http://www.mytju.com/classcode/tools/encode_utf8.asp&#34;&gt;http://www.mytju.com/classcode/tools/encode_utf8.asp&lt;/a&gt;&lt;code&gt;英文字符占1字节，中文字符占3字节&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;字符的本质是一个整数，所以直接输出时，输出的是该字符对应的utf-8编码的码值&lt;/li&gt;
+&lt;li&gt;可以直接给某个变量赋一个数字，然后按格式化输出&lt;code&gt;%c&lt;/code&gt;，会输出该数字对应的unicode字符&lt;/li&gt;
+&lt;li&gt;字符类型是可以进行运算的，相当于一个整数，因为它对应有Unicode&lt;/li&gt;
+&lt;li&gt;字符型本质：
+&lt;ol&gt;
+&lt;li&gt;字符型存储到计算机中，需要将字符对应的码值（整数）找出来
+&lt;ol&gt;
+&lt;li&gt;存储：字符--对应码值--二进制--存储&lt;/li&gt;
+&lt;li&gt;读取：二进制--码值--字符--读取&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;字符和码值的对应关系是通过字符编码表决定的&lt;/li&gt;
+&lt;li&gt;go语言的编码都统一成utf8，非常方便&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;字符串使用细节&#34;&gt;字符串使用细节&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;golang的字符串的字节使用utf-8编码表示Unicode文本，不会再有中文乱码的问题&lt;/li&gt;
+&lt;li&gt;字符串一旦赋值，就无法修改了，即&lt;strong&gt;在golang中字符串时不可变的&lt;/strong&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	var c1 string = &amp;quot;abcdef&amp;quot;
+	c1[0] = &#39;x&#39;  //无法修改字符串内容，提示报错
+	fmt.Printf(&amp;quot;c1= %s&amp;quot;,c1)
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;字符串的两种表示形式
+&lt;ol&gt;
+&lt;li&gt;双引号，会识别转义字符，例如&lt;code&gt;&amp;quot;abc\n123&amp;quot;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;反引号，以字符串的原生形式输出，包括换行和特殊字符，可以实现防止攻击、输出源代码等效果，类似linux的shell中的单引号&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;字符串拼接方式&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;func main () {
+	var c1 = &amp;quot;hello &amp;quot; + &amp;quot;world&amp;quot;
+	c1 += &amp;quot; haha!&amp;quot;
+	fmt.Printf(&amp;quot;c1= %s&amp;quot;,c1)
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;5&#34;&gt;
+&lt;li&gt;当一行字符产太长时，需要使用到多行字符串，可以分行写，但是&lt;code&gt;+&lt;/code&gt;号必须保留在上一行&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	var c1 = &amp;quot;hello &amp;quot; + &amp;quot;world&amp;quot; +
+	&amp;quot; haha!&amp;quot;
+	fmt.Printf(&amp;quot;c1= %s&amp;quot;,c1)
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;2-派生复杂数据类型&#34;&gt;2. 派生/复杂数据类型&lt;/h2&gt;
+&lt;h3 id=&#34;分类-2&#34;&gt;分类&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;指针pointer&lt;/li&gt;
+&lt;li&gt;数组&lt;/li&gt;
+&lt;li&gt;结构体struct&lt;/li&gt;
+&lt;li&gt;管道channel&lt;/li&gt;
+&lt;li&gt;函数&lt;/li&gt;
+&lt;li&gt;切片slice&lt;/li&gt;
+&lt;li&gt;接口interface&lt;/li&gt;
+&lt;li&gt;map&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;基本数据类型的默认值&#34;&gt;基本数据类型的默认值&lt;/h1&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;数据类型&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;默认值&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;整型int&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;浮点型float&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;0.0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;字符串string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&amp;quot;&amp;quot;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;布尔型bool&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;false&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	var a int
+	var b float32
+	var c float64
+	var d bool
+	var e string
+	// %v 表示按照变量的值输出
+	fmt.Printf(&amp;quot;默认值 int=%d float32=%v float64=%v bool=%v string=%v&amp;quot;,a,b,c,d,e)
+}
+
+// 默认值 int=0 float32=0 float64=0 bool=false string=
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;基本数据类型的相互转换&#34;&gt;基本数据类型的相互转换&lt;/h1&gt;
+&lt;p&gt;golang在不同类型的变量之间赋值时&lt;strong&gt;需要显式转换&lt;/strong&gt;，即golang中数据类型&lt;strong&gt;不能自动转换&lt;/strong&gt;&lt;br&gt;
+&lt;strong&gt;转换方式&lt;/strong&gt;：T(v)，表示将值v转换成类型T&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	var a int32 =100
+	var b float32 = float32(a)
+	var c int8 = int8(a)
+	var d int64 = int64(a)
+	var e string = string(a)
+	// %v 表示按照变量的值输出
+	fmt.Printf(&amp;quot;数据类型转换 int32=%v float32=%v int8=%v int64=%v string=%v&amp;quot;,a,b,c,d,e)
+}
+
+//数据类型转换 int32=100 float32=100 int8=100 int64=100 string=d
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;由上可见：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;数据类型转换，可以从&lt;strong&gt;精度高&amp;lt;--&amp;gt;精度低 或者 范围大&amp;lt;--&amp;gt;范围小&lt;/strong&gt;进行双向转换。但是在转换时需要考虑数据类型所能表示的范围，否则由范围大转向范围小的类型&lt;sub&gt;例如int64转换成int8&lt;/sub&gt;，在编译时不会报错，只是&lt;strong&gt;转换的结果按照溢出处理&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;被转换的是变量存储的数据，变量本身的数据类型并没有变化&lt;code&gt;原因是同一个变量无法进行第2次声明，即第一次声明之后其类型固定&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;不同类型的数据不能相加，需要先转成同一类型之后才能进行相加操作&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// 溢出处理：
+func main () {
+	var a int64 = 9999
+	var b int8 = int8(a)
+
+	// %v 表示按照变量的值输出
+	fmt.Printf(&amp;quot;b= %v&amp;quot;,b)
+}
+
+//b= 15
+
+//--------------------------------------
+
+// 先转换类型再操作：
+func main () {
+	var a int32 = 10
+	var b int64
+	var c int8
+
+	b = int64(a) + 1  // b=a+1会报错，因为b和a数据不同数据类型
+	c = int8(b) + 2
+
+	// %v 表示按照变量的值输出
+	fmt.Printf(&amp;quot;b=%v c=%v&amp;quot;,b,c)
+}
+
+// b=11 c=13
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;基本数据类型和string之间转换&#34;&gt;基本数据类型和string之间转换&lt;/h1&gt;
+&lt;h2 id=&#34;基本数据类型-string&#34;&gt;基本数据类型--&amp;gt;string&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;方法1（更通用更灵活）&lt;br&gt;
+&lt;code&gt;fmt.Sprintf(&amp;quot;%参数&amp;quot;,表达式)&lt;/code&gt;，Sprintf根据format参数生成格式化的字符串并返回该字符串&lt;/li&gt;
+&lt;li&gt;方法2&lt;br&gt;
+使用&lt;code&gt;strconv&lt;/code&gt;包的函数，大致的格式为&lt;code&gt;strconv.FormatXXX()&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;import (
+	&amp;quot;fmt&amp;quot;
+	&amp;quot;strconv&amp;quot;
+)
+
+func main () {
+	// 第一种方式
+	var num1 int = 99
+	var num2 float64 = 23.456
+	var b bool = true
+	var myChar byte = &#39;h&#39;
+	var str string //空的str
+
+	//使用第一种方式来转换 fmt.Sprintf方法
+
+	str = fmt.Sprintf(&amp;quot;%d&amp;quot;, num1)
+	fmt.Printf(&amp;quot;str type %T \tstr=%q\n&amp;quot;, str, str)	// str type string 	str=&amp;quot;99&amp;quot;
+
+	str = fmt.Sprintf(&amp;quot;%f&amp;quot;, num2)
+	fmt.Printf(&amp;quot;str type %T \tstr=%q\n&amp;quot;, str, str)	// str type string 	str=&amp;quot;23.456000&amp;quot;
+
+	str = fmt.Sprintf(&amp;quot;%t&amp;quot;, b)
+	fmt.Printf(&amp;quot;str type %T \tstr=%q\n&amp;quot;, str, str)	// str type string 	str=&amp;quot;true&amp;quot;
+
+	str = fmt.Sprintf(&amp;quot;%c&amp;quot;, myChar)
+	fmt.Printf(&amp;quot;str type %T \tstr=%q\n&amp;quot;, str, str)	// str type string 	str=&amp;quot;h&amp;quot;
+
+	
+	//第二种方式 strconv 函数
+	var num3 int = 99
+	var num4 float64 = 23.456
+	var num5 int64 = 4567
+	var b2 bool = true
+
+	str = strconv.FormatInt(int64(num3), 10)
+	fmt.Printf(&amp;quot;str type %T \tstr=%q\n&amp;quot;, str, str)	// str type string 	str=&amp;quot;99&amp;quot;
+
+	// strconv.FormatFloat(num4, &#39;f&#39;, 10, 64)
+	// 说明： &#39;f&#39; 格式 10：表示小数位保留10位 64 :表示这个小数是float64
+	str = strconv.FormatFloat(num4, &#39;f&#39;, 10, 64)
+	fmt.Printf(&amp;quot;str type %T \tstr=%q\n&amp;quot;, str, str)	// str type string 	str=&amp;quot;23.4560000000&amp;quot;
+
+	str = strconv.FormatBool(b2)
+	fmt.Printf(&amp;quot;str type %T \tstr=%q\n&amp;quot;, str, str)	// str type string 	str=&amp;quot;true&amp;quot;
+
+	//strconv包中有一个函数Itoa
+	str = strconv.Itoa(int(num5))
+	fmt.Printf(&amp;quot;str type %T \tstr=%q\n&amp;quot;, str, str)	// str type string 	str=&amp;quot;4567&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;string-基本数据类型&#34;&gt;string--&amp;gt;基本数据类型&lt;/h2&gt;
+&lt;p&gt;使用&lt;code&gt;strconv&lt;/code&gt;包的函数，大致的格式为&lt;code&gt;strconv.ParseXXX()&lt;/code&gt;&lt;br&gt;
+注意事项：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;默认返回的数据类型为int64或者float64，想转成其他数据类型则需要进一步转换&lt;/li&gt;
+&lt;li&gt;将string转换成基本数据类型时，&lt;strong&gt;需要确保string类型能够转换成有效的数据&lt;/strong&gt;，比如可以把“123”转换成整数，但是无法将“hello”转换成整数，此时golang直接将其转换成0，其他类型类似，float为0、bool为false&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;import (
+	&amp;quot;fmt&amp;quot;
+	&amp;quot;strconv&amp;quot;
+)
+
+func main () {
+
+	var str string = &amp;quot;true&amp;quot;
+	var b bool
+	// b, _ = strconv.ParseBool(str)
+	// 说明
+	// 1. strconv.ParseBool(str) 函数会返回两个值 (value bool, err error)
+	// 2. 只想获取到 value bool ,不想获取 err ,所以使用_忽略
+	b , _ = strconv.ParseBool(str)
+	fmt.Printf(&amp;quot;b type %T  b=%v\n&amp;quot;, b, b)	// b type bool  b=true
+
+
+	var str2 string = &amp;quot;1234590&amp;quot;
+	var n1 int64
+	var n2 int
+	n1, _ = strconv.ParseInt(str2, 10, 64)
+	n2 = int(n1)
+	fmt.Printf(&amp;quot;n1 type %T  n1=%v\n&amp;quot;, n1, n1)	// n1 type int64  n1=1234590
+	fmt.Printf(&amp;quot;n2 type %T n2=%v\n&amp;quot;, n2, n2)	// n2 type int n2=1234590
+
+
+	var str3 string = &amp;quot;123.456&amp;quot;
+	var f1 float64
+	f1, _ = strconv.ParseFloat(str3, 64)
+	fmt.Printf(&amp;quot;f1 type %T f1=%v\n&amp;quot;, f1, f1)  // f1 type float64 f1=123.456
+
+    // 因为返回的只能是int64或者float64，如果希望得到int16、int32、float32等基本数据类型的数据，则需要进一步转换处理：
+    // var f2 float32
+    // f2 = float32(f1)
+
+
+	//注意：
+	var str4 string = &amp;quot;hello&amp;quot;
+	var n3 int64 = 11
+	n3, _ = strconv.ParseInt(str4, 10, 64)
+	fmt.Printf(&amp;quot;n3 type %T n3=%v\n&amp;quot;, n3, n3)  // n3 type int64 n3=0
+
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;指针&#34;&gt;指针&lt;/h1&gt;
+&lt;h2 id=&#34;基本介绍&#34;&gt;基本介绍&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;基本数据类型，变量存的就是值，也叫&lt;strong&gt;值类型&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;值类型都有对应的指针类型，形式为&lt;code&gt;*数据类型&lt;/code&gt;，比如int对应的指针类型就是&lt;code&gt;*int&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;使用&lt;code&gt;&amp;amp;&lt;/code&gt;获取变量的地址，比如&lt;code&gt;var num int&lt;/code&gt;，获取变量num的地址方式为&lt;code&gt;&amp;amp;num&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	var str int = 100
+	fmt.Printf(&amp;quot;str地址=&amp;quot;,&amp;amp;str)	// str地址=%!(EXTRA *int=0xc000012078)
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;&lt;strong&gt;指针类型&lt;/strong&gt;，指针变量存的是一个地址，这个地址指向的空间存的才是值，例如&lt;code&gt;var ptr *int = &amp;amp;num&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;获取指针类型变量所指向的值，使用&lt;code&gt;*&lt;/code&gt;，例如&lt;code&gt;*ptr&lt;/code&gt;获取ptr指向的值。下面的代码详细说明了&lt;strong&gt;指针在内存中的布局&lt;/strong&gt;情况&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main () {
+	//基本数据类型在内存布局
+	var i int = 10
+	// i 的地址是什么,&amp;amp;i
+	fmt.Println(&amp;quot;i的地址=&amp;quot;, &amp;amp;i)	//i的地址= 0xc0000ac058
+
+	//下面的 var ptr *int = &amp;amp;i
+	//1. ptr 是一个指针变量
+	//2. ptr 的类型 *int
+	//3. ptr 本身的值&amp;amp;i
+	var ptr *int = &amp;amp;i
+	fmt.Printf(&amp;quot;ptr=%v\n&amp;quot;, ptr)	//ptr=0xc0000ac058
+	fmt.Printf(&amp;quot;ptr 的地址=%v\n&amp;quot;, &amp;amp;ptr)	//ptr 的地址=0xc0000d8020
+	fmt.Printf(&amp;quot;ptr 指向的值=%v\n&amp;quot;, *ptr)	//ptr 指向的值=10
+
+	// 修改i在内存中的值
+	*ptr = 99
+	fmt.Printf(&amp;quot;i 修改之后内存中的值=%v&amp;quot;, *ptr)	//i 修改之后内存中的值=99
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;figure data-type=&#34;image&#34; tabindex=&#34;1&#34;&gt;&lt;img src=&#34;https://fqj-web.github.io/post-images/1628649539191.png&#34; alt=&#34;指针类型&#34; loading=&#34;lazy&#34;&gt;&lt;/figure&gt;
+&lt;blockquote&gt;
+&lt;p&gt;为什么要存在指针？&lt;br&gt;
+因为变量的值在声明过程中或者赋值过程中已经确定，之后无法进行修改。如果想要修改该变量的值，则需要直接进行内存级别的操作，修改内存中的值，首先需要获取这个变量存储的值在&lt;strong&gt;内存中的地址&lt;/strong&gt;，然后才能进行内存操作，这个&lt;strong&gt;内存中的地址&lt;/strong&gt;就是指针。&lt;br&gt;
+简而言之，指针存在的意义就是为了对值类型变量进行操作&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;值类型和引用类型&#34;&gt;值类型和引用类型&lt;/h1&gt;
+&lt;h2 id=&#34;值类型&#34;&gt;值类型&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;包含基本数据类型（int系列、float系列、bool、string）、数组、结构体struct&lt;/li&gt;
+&lt;li&gt;变量直接存储值，内存通常在&lt;code&gt;栈&lt;/code&gt;中分配&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1628653681273.png&#34; alt=&#34;值类型&#34; loading=&#34;lazy&#34;&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;引用类型&#34;&gt;引用类型&lt;/h2&gt;
+&lt;p&gt;包含指针、切片slice、map、管道chan、interface等&lt;br&gt;
+变量存储的是一个地址，这个地址对应的空间才真正存储数据值，内存通常在堆上分配，当没有任何变量引用这个地址时，该地址对应的数据空间就成为一个垃圾，由GC来回收&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1628653692781.png&#34; alt=&#34;引用类型&#34; loading=&#34;lazy&#34;&gt;&lt;br&gt;
+&lt;img src=&#34;https://fqj-web.github.io/post-images/1628653718716.png&#34; alt=&#34;内存中栈区和堆区示意图&#34; loading=&#34;lazy&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;标识符&#34;&gt;标识符&lt;/h1&gt;
+&lt;h2 id=&#34;标识符命名规则&#34;&gt;标识符命名规则&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;由0-9、a-z、A-Z、_组成，且开头不可以是数字&lt;/li&gt;
+&lt;li&gt;golang中严格区分大小写，且标识符中不能包含空格&lt;/li&gt;
+&lt;li&gt;下划线&lt;code&gt;_&lt;/code&gt;本身在go中是一个特殊的标识符，称为&lt;strong&gt;空标识符&lt;/strong&gt;，可以代表任何其他标识符，但是它对应的值会被忽略（例如，忽略某个返回值时可以使用_），因此，&lt;strong&gt;仅能作为占位符使用，无法作为标识符使用&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;不能以系统保留关键字（25个）和预定义标识符（36个）作为自定义标识符，系统保留关键字和预定义标识符如下：
+&lt;ol&gt;
+&lt;li&gt;系统保留关键字&lt;code&gt;简化代码编译过程中对代码的解析&lt;/code&gt;
+&lt;ol&gt;
+&lt;li&gt;break：强制退出循环或switch语句块。跳出当前循环、switch、select，switch&lt;sub&gt;select默认break，如果不希望break，使用fallthrough&lt;/sub&gt;，以上这些结构可以用标签命名，break+标签名，可以跳出多层结构&lt;/li&gt;
+&lt;li&gt;case：用于switch和select语句块中，后跟一个表达式，表示一个待匹配项&lt;/li&gt;
+&lt;li&gt;chan：用于定义channel的关键字，，要用于不同协程直接通信，类似linux管道&lt;/li&gt;
+&lt;li&gt;const：常量关键字&lt;/li&gt;
+&lt;li&gt;continue：跳过本轮循环，进入下一轮循环迭代。continue也可以使用标签，忽略当前循环结构，直接继续执行标签指定的循环&lt;/li&gt;
+&lt;li&gt;default：switch和switch语句块中定义的默认项&lt;/li&gt;
+&lt;li&gt;defer：延迟调用关键字。在方法结束（包括异常）时调用，同一个方法内可以定义多个defer，调用顺序和定义相反。注意，defer后跟的表达式是定义时计算的，不是调用时计算的：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func Defer() {
+    i := 1
+    defer println(&amp;quot;first&amp;quot;, i+1)
+    i += 1
+    defer println(&amp;quot;second&amp;quot;, i)
+}
+//输出
+//second 2 
+//first 2
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;8&#34;&gt;
+&lt;li&gt;else：选择判断语句关键字&lt;/li&gt;
+&lt;li&gt;fallthrough：switch语句块中使一个case子块执行完毕后，继续执行下一个case子块的代码&lt;/li&gt;
+&lt;li&gt;for：循环体语句块关键字&lt;/li&gt;
+&lt;li&gt;func：	定义函数和方法的关键字&lt;/li&gt;
+&lt;li&gt;go：开启goroutine协程，后面直接跟方法调用&lt;/li&gt;
+&lt;li&gt;goto：流程控制关键字，可以讲程序执行流程跳转到一个精确的位置&lt;/li&gt;
+&lt;li&gt;if：选择判断语句关键字&lt;/li&gt;
+&lt;li&gt;import：导入包，golang目前是不支持循环引用的，例如A import B、B 不能再引用A，A import B、B import C、C import A 也是不可以的&lt;/li&gt;
+&lt;li&gt;interface：接口类型&lt;/li&gt;
+&lt;li&gt;map：内置map类型，哈希字典&lt;/li&gt;
+&lt;li&gt;package：定义包名&lt;/li&gt;
+&lt;li&gt;range：定义迭代范围，常用在循环语句块中&lt;/li&gt;
+&lt;li&gt;return：结束函数指定，使函数返回&lt;/li&gt;
+&lt;li&gt;select：	用于定义通信控制结构的关键字&lt;/li&gt;
+&lt;li&gt;struct：	结构体结构关键字&lt;/li&gt;
+&lt;li&gt;switch：多重选择判断结构语句块关键字&lt;/li&gt;
+&lt;li&gt;type：自定义类型关键字，即声明结构体、接口、类型和类型别名。声明一个类型，是作为一个新的类型使用，虽然本质上和原类型没有区别，但是无法直接当作原类型使用，而别名和原类型使用起来完全相同&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;type A = int //int的别名
+type B int	//新类型b
+
+var a A = 1
+var b B = 1
+
+func GetSize(i int) {
+    println(unsafe.Sizeof(i))
+}
+//64位机
+GetSize(a)	//输出8
+GetSize(b)	//无法通过编译，不能直接把B类型当作int使用
+GetSize(int(b))	//输出8，可以强制转换
+GetSize(*(*int)(unsafe.Pointer(&amp;amp;b)))//输出8，Pointer当然也是可以的
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;25&#34;&gt;
+&lt;li&gt;var：变量定义关键字&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;预定义标识符&lt;code&gt;包括基础数据类型和系统内嵌函数&lt;/code&gt;
+&lt;ol&gt;
+&lt;li&gt;内建常量: true false iota nil&lt;/li&gt;
+&lt;li&gt;内建类型: int int8 int16 int32 int64 uint uint8 uint16 uint32 uint64 uintptr float32 float64 complex64 complex128 bool byte rune string error&lt;/li&gt;
+&lt;li&gt;内建函数: make len cap new append copy close delete complex real imag panic recover&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr&gt;
+&lt;h1 id=&#34;fmt格式化io&#34;&gt;fmt（格式化IO）&lt;/h1&gt;
+&lt;p&gt;fmt包实现了类似C语言printf和scanf的格式化I/O，格式化动作（&#39;verb&#39;）源自C语言但更简单。&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;type user struct {
+    name string
+}
+
+func main() {
+    u := user{&amp;quot;tang&amp;quot;}
+    //Printf 格式化输出
+    fmt.Printf(&amp;quot;% + v\n&amp;quot;, u)     //格式化输出结构
+    fmt.Printf(&amp;quot;%#v\n&amp;quot;, u)       //输出值的 Go 语言表示方法
+    fmt.Printf(&amp;quot;%T\n&amp;quot;, u)        //输出值的类型的 Go 语言表示
+    fmt.Printf(&amp;quot;%t\n&amp;quot;, true)     //输出值的 true 或 false
+    fmt.Printf(&amp;quot;%b\n&amp;quot;, 1024)     //二进制表示
+    fmt.Printf(&amp;quot;%c\n&amp;quot;, 11111111) //数值对应的 Unicode 编码字符
+    fmt.Printf(&amp;quot;%d\n&amp;quot;, 10)       //十进制表示
+    fmt.Printf(&amp;quot;%o\n&amp;quot;, 8)        //八进制表示
+    fmt.Printf(&amp;quot;%q\n&amp;quot;, 22)       //转化为十六进制并附上单引号
+    fmt.Printf(&amp;quot;%x\n&amp;quot;, 1223)     //十六进制表示，用a-f表示
+    fmt.Printf(&amp;quot;%X\n&amp;quot;, 1223)     //十六进制表示，用A-F表示
+    fmt.Printf(&amp;quot;%U\n&amp;quot;, 1233)     //Unicode表示
+    fmt.Printf(&amp;quot;%b\n&amp;quot;, 12.34)    //无小数部分，两位指数的科学计数法6946802425218990p-49
+    fmt.Printf(&amp;quot;%e\n&amp;quot;, 12.345)   //科学计数法，e表示
+    fmt.Printf(&amp;quot;%E\n&amp;quot;, 12.34455) //科学计数法，E表示
+    fmt.Printf(&amp;quot;%f\n&amp;quot;, 12.3456)  //有小数部分，无指数部分
+    fmt.Printf(&amp;quot;%g\n&amp;quot;, 12.3456)  //根据实际情况采用%e或%f输出
+    fmt.Printf(&amp;quot;%G\n&amp;quot;, 12.3456)  //根据实际情况采用%E或%f输出
+    fmt.Printf(&amp;quot;%s\n&amp;quot;, &amp;quot;wqdew&amp;quot;)  //直接输出字符串或者[]byte
+    fmt.Printf(&amp;quot;%q\n&amp;quot;, &amp;quot;dedede&amp;quot;) //双引号括起来的字符串
+    fmt.Printf(&amp;quot;%x\n&amp;quot;, &amp;quot;abczxc&amp;quot;) //每个字节用两字节十六进制表示，a-f表示
+    fmt.Printf(&amp;quot;%X\n&amp;quot;, &amp;quot;asdzxc&amp;quot;) //每个字节用两字节十六进制表示，A-F表示
+    fmt.Printf(&amp;quot;%p\n&amp;quot;, 0x123)    //0x开头的十六进制数表示
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;格式化动作分类&lt;/strong&gt;：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;通用&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;%v	值的默认格式表示
+%+v	类似%v，但输出结构体时会添加字段名
+%#v	值的Go语法表示
+%T	值的类型的Go语法表示
+%%	百分号
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;布尔值&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;%t	单词true或false
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;整数&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;%b	表示为二进制
+%c	该值对应的unicode码值
+%d	表示为十进制
+%o	表示为八进制
+%q	该值对应的单引号括起来的go语法字符字面值，必要时会采用安全的转义表示
+%x	表示为十六进制，使用a-f
+%X	表示为十六进制，使用A-F
+%U	表示为Unicode格式：U+1234，等价于&amp;quot;U+%04X&amp;quot;
+
+没有%u。整数如果是无符号类型自然输出也是无符号的
+类似的，也没有必要指定操作数的尺寸（int8，int64）
+
+宽度通过一个紧跟在百分号后面的十进制数指定，如果未指定宽度，则表示值时除必需之外不作填充。
+精度通过（可选的）宽度后跟点号后跟的十进制数指定。
+如果未指定精度，会使用默认精度；如果点号后没有跟数字，表示精度为0。例如：
+%f:    默认宽度，默认精度
+%9f    宽度9，默认精度
+%.2f   默认宽度，精度2
+%9.2f  宽度9，精度2
+%9.f   宽度9，精度0    
+
+宽度和精度格式化控制的是Unicode码值的数量（不同于C的printf，它的这两个因数指的是字节的数量）。
+两者任一个或两个都可以使用&#39;*&#39;号取代，此时它们的值将被对应的参数（按&#39;*&#39;号和verb出现的顺序，即控制其值的参数会出现在要表示的值前面）控制，这个操作数必须是int类型。
+
+对于大多数类型的值，宽度是输出字符数目的最小数量，如果必要会用空格填充。
+对于字符串，精度是输出字符数目的最大数量，如果必要会截断字符串。
+对于整数，宽度和精度都设置输出总长度。采用精度时表示右对齐并用0填充，而宽度默认表示用空格填充。
+对于浮点数，宽度设置输出总长度；精度设置小数部分长度（如果有的话），除了%g和%G，此时精度设置总的数字个数。例如，对数字123.45，格式%6.2f 输出123.45；格式%.4g输出123.5。%e和%f的默认精度是6，%g的默认精度是可以将该值区分出来需要的最小数字个数。
+对复数，宽度和精度会分别用于实部和虚部，结果用小括号包裹。因此%f用于1.2+3.4i输出(1.200000+3.400000i)。
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;4&#34;&gt;
+&lt;li&gt;浮点数与复数&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;%b	无小数部分、二进制指数的科学计数法，如-123456p-78；参见strconv.FormatFloat
+%e	科学计数法，如-1234.456e+78
+%E	科学计数法，如-1234.456E+78
+%f	有小数部分但无指数部分，如123.456
+%F	等价于%f
+%g	根据实际情况采用%e或%f格式（以获得更简洁、准确的输出）
+%G	根据实际情况采用%E或%F格式（以获得更简洁、准确的输出）
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;5&#34;&gt;
+&lt;li&gt;字符串和字符&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;%s	直接输出字符串或者[]byte
+%q	该值对应的双引号括起来的go语法字符串字面值，必要时会采用安全的转义表示
+%x	每个字节用两字符十六进制数表示（使用a-f）
+%X	每个字节用两字符十六进制数表示（使用A-F） 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;6&#34;&gt;
+&lt;li&gt;指针&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;%p	表示为十六进制，并加上前导的0x    
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&#34;7&#34;&gt;
+&lt;li&gt;其他flag&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;&#39;+&#39;	总是输出数值的正负号；对%q（%+q）会生成全部是ASCII字符的输出（通过转义）；
+&#39; &#39;	对数值，正数前加空格而负数前加负号；
+&#39;-&#39;	在输出右边填充空白而不是默认的左边（即从默认的右对齐切换为左对齐）；
+&#39;#&#39;	切换格式：
+  	八进制数前加0（%#o），十六进制数前加0x（%#x）或0X（%#X），指针去掉前面的0x（%#p）；
+ 	对%q（%#q），如果strconv.CanBackquote返回真会输出反引号括起来的未转义字符串；
+ 	对%U（%#U），输出Unicode格式后，如字符可打印，还会输出空格和单引号括起来的go字面值；
+  	对字符串采用%x或%X时（% x或% X）会给各打印的字节之间加空格；
+&#39;0&#39;	使用0而不是空格填充，对于数值类型会把填充的0放在正负号后面；
+&lt;/code&gt;&lt;/pre&gt;
 ">golang 第三章 变量</a>
       </div>
       
       <div class="item">
         <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/golang-di-yi-zhang-kai-shan-pian/"" data-c="
-          &lt;h1 id=&#34;学习方向&#34;&gt;学习方向&lt;/h1&gt;
+          &lt;h1 id=&#34;学习参考&#34;&gt;学习参考&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;https://books.studygolang.com/The-Golang-Standard-Library-by-Example/&#34;&gt;https://books.studygolang.com/The-Golang-Standard-Library-by-Example/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://studygolang.com/&#34;&gt;https://studygolang.com/&lt;/a&gt;，中文&lt;a href=&#34;https://studygolang.com/pkgdoc&#34;&gt;https://studygolang.com/pkgdoc&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;学习方向&#34;&gt;学习方向&lt;/h1&gt;
 &lt;p&gt;区块链（BT，分布式账本技术）研发工程师&lt;br&gt;
 Go服务器端\游戏软件工程师：例如处理日志、数据打包、虚拟机处理、文件系统等，适合数据处理，处理大并发&lt;br&gt;
 Golang分布式\云计算软件工程师&lt;/p&gt;
@@ -17006,82 +18554,82 @@ VxLAN在支持SDN，多租户等方面能力更强，因此成为业界的技术
         <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/xue-xi-shun-xu/"" data-c="
           &lt;h1 id=&#34;1-lab题-20161111&#34;&gt;1. LAB题-2016.11.11&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1205381&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1205381&#34;&gt; 01. LAB面试题讲解第一天-1【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3362651&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3362651&#34;&gt; 02. LAB面试题讲解第一天-2【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4260927&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4260927&#34;&gt; 03. LAB面试题讲解第二天-1【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8755750&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8755750&#34;&gt; 04. LAB面试题讲解第二天-2【2021.01.16】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8915433&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8915433&#34;&gt; 05. LAB面试题讲解第三天【2021.01.16】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6296979&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6296979&#34;&gt; 01. LAB面试题讲解第一天-1【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7290478&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7290478&#34;&gt; 02. LAB面试题讲解第一天-2【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7403544&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7403544&#34;&gt; 03. LAB面试题讲解第二天-1【2021.01.13 快进略过】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3615776&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3615776&#34;&gt; 04. LAB面试题讲解第二天-2【2021.01.16】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1326858&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1326858&#34;&gt; 05. LAB面试题讲解第三天【2021.01.16】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;2-乾颐堂技术茶话会-最后&#34;&gt;2. 乾颐堂技术茶话会-最后&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2674120&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2674120&#34;&gt; 乾颐堂安德技术大咖茶话会-HCIEv3.0-2019.4考试新动态1【2021.01.14】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9819134&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9819134&#34;&gt; Pv4向IPv6过渡技术【2021.01.14】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7026490&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7026490&#34;&gt; VXALN【2021.01.15】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8836607&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8836607&#34;&gt; 乾颐堂安德技术大咖茶话会-HCIEv3.0-2019.4考试新动态1【2021.01.14】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5741936&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5741936&#34;&gt; Pv4向IPv6过渡技术【2021.01.14】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8833033&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8833033&#34;&gt; VXALN【2021.01.15】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;hr&gt;
 &lt;p&gt;&lt;strong&gt;以下为面试重点内容&lt;/strong&gt;&lt;/p&gt;
 &lt;h1 id=&#34;3-二层协议-20161115&#34;&gt;3. 二层协议-2016.11.15&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3820707&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3820707&#34;&gt; 06. 二层协议第一天：STP和RSTP区别-1【2021.01.17】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7357255&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7357255&#34;&gt; 07. 二层协议第二天：STP和RSTP区别-2【2021.01.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-170634&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-170634&#34;&gt; 08. 二层协议第二天：STP和RSTP区别-3【2021.01.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2563894&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2563894&#34;&gt; 09. 二层协议第三天：MSTP【2021.01.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8890291&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8890291&#34;&gt; 10. 二层协议第三天：VLAN特性【2021.01.20】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1558135&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1558135&#34;&gt; 11. 二层协议第四天：Super VLAN&amp;MUX VLAN&amp;Smart-link【2021.01.21】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7134223&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7134223&#34;&gt; 06. 二层协议第一天：STP和RSTP区别-1【2021.01.17】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3203481&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3203481&#34;&gt; 07. 二层协议第二天：STP和RSTP区别-2【2021.01.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8628388&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8628388&#34;&gt; 08. 二层协议第二天：STP和RSTP区别-3【2021.01.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-568528&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-568528&#34;&gt; 09. 二层协议第三天：MSTP【2021.01.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7504481&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7504481&#34;&gt; 10. 二层协议第三天：VLAN特性【2021.01.20】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5888884&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5888884&#34;&gt; 11. 二层协议第四天：Super VLAN&amp;MUX VLAN&amp;Smart-link【2021.01.21】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;code&gt;22-24号整理大量二层追问和视频中没有的知识点，作为二层的结尾。二层知识点多且杂，但主要的部分是STP、VLAN、PPP，其他的也准备一下，但适可而止&lt;/code&gt;&lt;/p&gt;
 &lt;h1 id=&#34;4-igp协议-20161118&#34;&gt;4. IGP协议-2016.11.18&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7615286&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7615286&#34;&gt; 12. IGP协议第一天：路由基础&amp;RIP-1【2021.01.24】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8428502&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8428502&#34;&gt; 13. IGP协议第一天：RIP-2【2021.01.25】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3250645&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3250645&#34;&gt; 14. IGP协议第二天：OSPF-1【2021.01.26】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4091409&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4091409&#34;&gt; 15. IGP协议第二天：OSPF-2【2021.01.27】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6374669&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6374669&#34;&gt; 16. IGP协议第三天：OSPF-3【2021.01.28】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4517979&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4517979&#34;&gt; 17. IGP协议第三天：OSPF-4【2021.01.30】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2103155&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2103155&#34;&gt; 18. IGP协议第四天：OSPF-5【2021.01.30】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1068703&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1068703&#34;&gt; 19. IGP协议第四天：OSPF-6【2021.01.31】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-765606&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-765606&#34;&gt; 20. IGP协议第五天：OSPF-7【2021.01.31】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2138500&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2138500&#34;&gt; 21. IGP协议第五天：OSPF-8【2021.02.01】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8616410&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8616410&#34;&gt; 22. IGP协议第六天：集成IS-IS-1【2021.02.06】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2997875&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2997875&#34;&gt; 23. IGP协议第六天：集成IS-IS-2【2021.02.07】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-626237&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-626237&#34;&gt; 24. IGP协议第六天：集成IS-IS-3【2021.02.08】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4785919&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4785919&#34;&gt; 25. IGP协议第六天：集成IS-IS-4【2021.02.08】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5384027&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5384027&#34;&gt; 12. IGP协议第一天：路由基础&amp;RIP-1【2021.01.24】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6357991&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6357991&#34;&gt; 13. IGP协议第一天：RIP-2【2021.01.25】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5074840&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5074840&#34;&gt; 14. IGP协议第二天：OSPF-1【2021.01.26】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2349002&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2349002&#34;&gt; 15. IGP协议第二天：OSPF-2【2021.01.27】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2008000&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2008000&#34;&gt; 16. IGP协议第三天：OSPF-3【2021.01.28】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6087229&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6087229&#34;&gt; 17. IGP协议第三天：OSPF-4【2021.01.30】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-337906&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-337906&#34;&gt; 18. IGP协议第四天：OSPF-5【2021.01.30】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9564301&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9564301&#34;&gt; 19. IGP协议第四天：OSPF-6【2021.01.31】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1928211&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1928211&#34;&gt; 20. IGP协议第五天：OSPF-7【2021.01.31】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2404155&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2404155&#34;&gt; 21. IGP协议第五天：OSPF-8【2021.02.01】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2495887&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2495887&#34;&gt; 22. IGP协议第六天：集成IS-IS-1【2021.02.06】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4902710&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4902710&#34;&gt; 23. IGP协议第六天：集成IS-IS-2【2021.02.07】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2679097&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2679097&#34;&gt; 24. IGP协议第六天：集成IS-IS-3【2021.02.08】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3135020&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3135020&#34;&gt; 25. IGP协议第六天：集成IS-IS-4【2021.02.08】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;5-bgp协议-20161126&#34;&gt;5. BGP协议-2016.11.26&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3377260&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3377260&#34;&gt; 26. BGP协议第一天：BGP-1【2021.02.11】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2282518&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2282518&#34;&gt; 27. BGP协议第二天：BGP-2【2021.02.11】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7826531&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7826531&#34;&gt; 28. BGP协议第二天：BGP-3【2021.02.12】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9783747&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9783747&#34;&gt; 29. BGP协议第三天：BGP-4【2021.02.12】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5156002&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5156002&#34;&gt; 26. BGP协议第一天：BGP-1【2021.02.11】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8226750&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8226750&#34;&gt; 27. BGP协议第二天：BGP-2【2021.02.11】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5580204&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5580204&#34;&gt; 28. BGP协议第二天：BGP-3【2021.02.12】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2697984&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2697984&#34;&gt; 29. BGP协议第三天：BGP-4【2021.02.12】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;6-组播-20161129&#34;&gt;6. 组播-2016.11.29&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5229621&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5229621&#34;&gt; 30. 组播第一天：组播基础&amp;IGMPV1、V2【2021.02.13】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6831279&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6831279&#34;&gt; 31. 组播第二天：IGMPV3【2021.02.13】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9707338&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9707338&#34;&gt; 32. 组播第二天：IGMP Snooping&amp;Proxy【2021.02.14】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6293904&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6293904&#34;&gt; 33. 组播第三天：组播PIM-DM【2021.02.14】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7289630&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7289630&#34;&gt; 34. 组播第三天：组播PIM-SM&amp;MSDP【2021.02.15】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2269651&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2269651&#34;&gt; 30. 组播第一天：组播基础&amp;IGMPV1、V2【2021.02.13】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1874739&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1874739&#34;&gt; 31. 组播第二天：IGMPV3【2021.02.13】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5012549&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5012549&#34;&gt; 32. 组播第二天：IGMP Snooping&amp;Proxy【2021.02.14】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5026124&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5026124&#34;&gt; 33. 组播第三天：组播PIM-DM【2021.02.14】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8058317&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8058317&#34;&gt; 34. 组播第三天：组播PIM-SM&amp;MSDP【2021.02.15】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;7-特性-20161208&#34;&gt;7. 特性-2016.12.08&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4444879&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4444879&#34;&gt; 35. DHCP&amp;DHCP Snooping&amp;DAI&amp;IP源防护【2021.02.16】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4015101&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4015101&#34;&gt; 36. FTP主被模式【2021.02.16】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7713800&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7713800&#34;&gt; 35. DHCP&amp;DHCP Snooping&amp;DAI&amp;IP源防护【2021.02.16】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7792635&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7792635&#34;&gt; 36. FTP主被模式【2021.02.16】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;8-ipv6-20161211&#34;&gt;8. IPv6-2016.12.11&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9151927&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9151927&#34;&gt; 37. IPV6第一天：IPV6基础-1【2021.02.17】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6394107&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6394107&#34;&gt; 38. IPV6第一天：IPV6基础-2【2021.02.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1535517&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1535517&#34;&gt; 39. IPV6第二天：IPV6隧道技术-1【2021.02.18】&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4218473&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4218473&#34;&gt; 40. IPV6第二天：IPV6隧道技术-2&amp;移动IPV6特性【2021.02.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9812109&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9812109&#34;&gt; 37. IPV6第一天：IPV6基础-1【2021.02.17】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1947190&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1947190&#34;&gt; 38. IPV6第一天：IPV6基础-2【2021.02.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2204650&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2204650&#34;&gt; 39. IPV6第二天：IPV6隧道技术-1【2021.02.18】&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6172571&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6172571&#34;&gt; 40. IPV6第二天：IPV6隧道技术-2&amp;移动IPV6特性【2021.02.18】&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;9-新加-201907&#34;&gt;9. 新加-2019.07&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-391199&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-391199&#34;&gt; 41. 乾颐堂面试-堆叠&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1096952&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1096952&#34;&gt; 42. 乾颐堂面试-路由撤销&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2657742&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2657742&#34;&gt; 43. 乾颐堂面试资料-V3相比V2增加&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-837164&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-837164&#34;&gt; 44. 乾颐堂面试资料-LSA问题&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3811747&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3811747&#34;&gt; 45. 乾颐堂面试资料-PPP&lt;/label&gt;&lt;/li&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8138006&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8138006&#34;&gt; 46. 乾颐堂面试-跨域&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2757558&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2757558&#34;&gt; 41. 乾颐堂面试-堆叠&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5237064&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5237064&#34;&gt; 42. 乾颐堂面试-路由撤销&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2550780&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2550780&#34;&gt; 43. 乾颐堂面试资料-V3相比V2增加&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8334986&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8334986&#34;&gt; 44. 乾颐堂面试资料-LSA问题&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3927940&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3927940&#34;&gt; 45. 乾颐堂面试资料-PPP&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9845681&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9845681&#34;&gt; 46. 乾颐堂面试-跨域&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 ">学习顺序</a>
       </div>
@@ -26391,43 +27939,43 @@ dis pim ipv6 rou  # 只有（*，FF1E::AA）
         <a class="result-title" style="opacity: 0;" href="https://fqj-web.github.io/post/hcie-shi-yan-ts_plana-yao-qiu-zheng-li/"" data-c="
           &lt;h1 id=&#34;1-eth-trunk&#34;&gt;1. eth-trunk&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8574620&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8574620&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2104923&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2104923&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site1中，LSW1-LSW2之间的所有链路要求做eth-trunk的捆绑，并且此eth-trunk要求做src-dst-ip负载；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;2-mstp&#34;&gt;2. MSTP&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9391992&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9391992&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4748464&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4748464&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;site1中，CLIENT1属于VLAN12，CLIENT2属于VLAN34；MSTP中的VLAN12属于instance1，vlan34属于instance2；两个instance的主备根桥分别在SW1和SW2上，并且要求CLIENT1访问R1时经过的路径是SW3-SW1-R1；同时要求CLIENT2访问R1时经过的路径是SW3-SW2-R1;&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;3-bgp-adv&#34;&gt;3. BGP ADV&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3717046&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3717046&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4209265&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4209265&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;R1访问VLAN12时经过的路径是R1-LSW1-LSW3;访问VLAN34时经过的路径是R1-LSW2-LSW3；只允许在AS300中实现，并且确保你的解决方案不要影响AS100 AS300以外的其他AS;&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;4-ospf&#34;&gt;4. OSPF&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9818805&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9818805&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-861408&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-861408&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;AS100中所有设备都运行了OSPF，但是部分设备的邻居关系有问题，解决此问题&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;5-mux-vlan&#34;&gt;5. mux-vlan&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6117106&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6117106&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9851370&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9851370&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site4中，AR24、AR25、AR26在一个网段中，同时都运行了ISIS协议，要求AR26能和AR24、AR25都能形成邻居关系，但是AR24与AR25不能形成邻居关系；通过LSW8的二层VLAN技术以及其他设备排除错误点来实现此要求： 注意；配置过程中不能在LSW8上删除和增加新的VLAN；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;6-mpls-vpn&#34;&gt;6. MPLS-VPN&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-287650&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-287650&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7551329&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7551329&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site1与Site4为同一个VPN客户的两个站点，现在site1里的CLIENTS无法和site4里的CLIENT通信，请解决此问题；注意：不要删除现有配置，可修改解决&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;7-vrrp&#34;&gt;7. VRRP&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1669878&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1669878&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4714485&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4714485&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2中AR10与AR11要为LSW4的PC4提供第一跳网关冗余服务，虚拟网关地址为10.2.129.254和10.2.129.253；在配置正确的情况下，VRRP配置后的状态信息如下；  为了加速VRRP的收敛，使用BFD跟踪上行链路状态以及VRRP的邻居关系；(最终结果要和下面的信息一致)&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;&amp;lt;AR10&amp;gt;display vrrp
@@ -26515,37 +28063,37 @@ dis pim ipv6 rou  # 只有（*，FF1E::AA）
 &lt;hr&gt;
 &lt;h1 id=&#34;8-dhcp&#34;&gt;8. DHCP&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1928148&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1928148&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1868855&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1868855&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2中，AR10 AR11是DHCP服务器并且相互备份，要求CLIENT7能通过DHCP服务器获取到地址10.2.129.100；要求CLIENT8只能获取指定地址为10.2.129.101；现在CLIENT8有时无法获取地址，请解决；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;9-sham-link&#34;&gt;9. sham-link&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5641272&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5641272&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1133413&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1133413&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2与Site3为同一个VPN客户的两个站点，现在AR10与AR20上面的客户（loopback0模拟）都能互通；请解决此问题；并且要求当AS100连接正常的时候，两个客户的数据包通信必须经过AS100；但是AS100出现问题的时候，两个站点可以通过备份链路进行通信&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;10-ipv6&#34;&gt;10. IPv6&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3946469&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3946469&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8980688&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8980688&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2与Site3配置了IPV6，并且运行OSPFV3协议；参与的设备有AR10、AR11、AR18、AR20；AR18与AR20之间通过tunnel相通；现在环境中的IPV6 CLIENT 13、IPV6 CLIENT 9 、IPV6 CLIENT10无法实现互相通信，请解决&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;11-telnet&#34;&gt;11. Telnet&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8700039&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8700039&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7421756&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7421756&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site3中，AR16 AR17 AR18帧中继网络中运行ospf，使用默认的网络类型；要求AR18能通过telnet远程管理AR16、AR17；现在AR18无法远程管理；解决此问题已满足以下表项；要求AR16的telnet认证方式为AAA，AR16上存在两个用户，admin用户级别为15级，guest用户级别为1级要求两个用户都能认证telnet登录；要求AR17的认证方法为password；所有telnet到AR17的用户级别无需求，但是能支持命令要求截图一致&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;12-qos&#34;&gt;12. Qos&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-26481&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-26481&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-717486&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-717486&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site3中AR20上一个用户（ loopback0模拟）和AR18的一个用户（loopback0模拟）要进行语音通信，使用的音频编码G.711，每路语音需要64Kbps的带宽，目前从AR20到AR18的语音质量不够好，需要在AR19上部署QOS；以保证语音流量的服务质量（反向流量不要求）&lt;/p&gt;
 &lt;hr&gt;
 &lt;h1 id=&#34;13-nat&#34;&gt;13. NAT&lt;/h1&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9084395&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9084395&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5011456&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5011456&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site5中通过安全接入AS,client11现在无法通过网关AR27访问到公网AS100、AS200；解决此问题已满足以下表项&lt;/p&gt;
 ">HCIE 实验TS_PlanA要求整理</a>
@@ -27142,7 +28690,7 @@ local-user hcie password cipher hcie
 &lt;figure data-type=&#34;image&#34; tabindex=&#34;1&#34;&gt;&lt;img src=&#34;https://fqj-web.github.io/post-images/1605853424451.PNG&#34; alt=&#34;TS_PlanB&#34; loading=&#34;lazy&#34;&gt;&lt;/figure&gt;
 &lt;h2 id=&#34;1-mstp&#34;&gt;1. MSTP&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-916711&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-916711&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3519577&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3519577&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;site1中，CLIENT1属于VLAN12，CLIENT2属于VLAN34；&lt;br&gt;
 MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
@@ -27152,13 +28700,13 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;2-eth-trunk&#34;&gt;2. eth-trunk&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1569492&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1569492&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3527768&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3527768&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site1中，LSW1-LSW2之间的所有链路要求做eth-trunk的捆绑，并且此eth-trunk要求做src-dst-ip负载；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;3-bgp-adv&#34;&gt;3. BGP ADV&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4802842&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4802842&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2126471&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2126471&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;R1访问VLAN12时经过的路径是R1-LSW1-LSW3;&lt;br&gt;
 访问VLAN34时经过的路径是R1-LSW2-LSW3；&lt;br&gt;
@@ -27166,7 +28714,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;4-mux-vlan&#34;&gt;4. mux-vlan&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7672801&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7672801&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1077123&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1077123&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site4中，AR24、AR25、AR26在一个网段中，同时都运行了ISIS协议，要求AR26能和AR24、AR25都能形成邻居关系，但是AR24与AR25不能形成邻居关系；&lt;br&gt;
 通过LSW8的二层VLAN技术以及其他设备排除错误点来实现此要求：&lt;br&gt;
@@ -27174,7 +28722,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;5-mpls-vpn&#34;&gt;5. MPLS-VPN&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9570460&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9570460&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7438716&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7438716&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site1与Site4为同一个VPN客户的两个站点，现在site1里的CLIENTS无法和site4里的CLIENT通信，请解决此问题；&lt;br&gt;
 注意：不要删除现有配置，可修改解决；&lt;/p&gt;
@@ -27184,7 +28732,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;6-sham-link&#34;&gt;6. sham-link&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8191757&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8191757&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8243839&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8243839&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2与Site3为同一个VPN客户的两个站点，现在AR10与AR20上面的客户（loopback0模拟）都能互通；请解决此问题；&lt;br&gt;
 并且要求当AS100连接正常的时候，两个客户的数据包通信必须经过AS100；但是AS100出现问题的时候，两个站点可以通过备份链路进行通信；&lt;/p&gt;
@@ -27194,7 +28742,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;7-vrrp&#34;&gt;7. vrrp&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-7448100&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-7448100&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9073283&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9073283&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2中AR10与AR11要为LSW4的PC4提供第一跳网关冗余服务，虚拟网关地址为10.2.129.254和10.2.129.253；  为了加速VRRP的收敛，使用BFD跟踪上行链路状态以及VRRP的邻居关系；(最终结果要和下面的信息一致)&lt;br&gt;
 在配置正确的情况下，VRRP配置后的状态信息如下：&lt;/p&gt;
@@ -27283,7 +28831,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;8-telnet&#34;&gt;8. Telnet&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-6622637&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-6622637&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8717382&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8717382&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site3中，AR16 AR17 AR18帧中继网络中运行ospf，使用默认的网络类型；&lt;br&gt;
 要求AR18能通过telnet远程管理AR16、AR17；现在AR18无法远程管理；解决此问题已满足以下表项；&lt;br&gt;
@@ -27292,7 +28840,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;9-ipv6&#34;&gt;9. IPv6&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-1510548&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-1510548&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5237443&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5237443&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2与Site3配置了IPV6，并且运行OSPFV3协议；&lt;br&gt;
 参与的设备有AR10、AR11、AR18、AR20；AR18与AR20之间通过tunnel相通；&lt;br&gt;
@@ -27304,13 +28852,13 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;10-bgp&#34;&gt;10. BGP&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-9503781&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-9503781&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2470533&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2470533&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;要求AS100中AR12的loopback0口能够访问AS200中的AR9的loopback0口；但是现在两个loopback口地址无法访问；请解决该问题；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;11-nat&#34;&gt;11. NAT&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-5446100&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-5446100&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4314924&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4314924&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site5中通过安全接入AS，client11现在无法通过网关AR27访问到公网AS100、AS200；解决此问题已满足以下表项；&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;1. AR9的s3/0/0接口宣告进ISIS 200
@@ -27318,7 +28866,7 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;12-dhcp&#34;&gt;12. DHCP&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3249523&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3249523&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4761095&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4761095&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site2中，AR10 AR11是DHCP服务器并且相互备份，要求CLIENT7能通过DHCP服务器获取到地址10.2.129.100；&lt;br&gt;
 要求CLIENT8只能获取指定地址为10.2.129.101；&lt;br&gt;
@@ -27326,13 +28874,13 @@ MSTP中的VLAN12属于instance1，vlan34属于instance2；&lt;br&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;13-ospf&#34;&gt;13. OSPF&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-3901141&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-3901141&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2448740&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2448740&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;AS100中所有设备都运行了OSPF，但是部分设备的邻居关系有问题，解决此问题；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;14-msdp&#34;&gt;14. msdp&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2579315&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2579315&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8530195&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8530195&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;AS100与AS200要部署域间组播；&lt;br&gt;
 AR7是AS100中的RP，AR9是AS200中的RP；&lt;br&gt;
@@ -27343,14 +28891,14 @@ AS100中AR22上有一台视频服务器，AS200中AR23上有一个组播接收�
 &lt;hr&gt;
 &lt;h2 id=&#34;15-qos&#34;&gt;15. QoS&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-8796913&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-8796913&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-2794200&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-2794200&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Site3中AR20上一个用户（ loopback0模拟）和AR18的一个用户（loopback0模拟）要进行语音通信，使用的音频编码G.711，每路语音需要64Kbps的带宽，目前从AR20到AR18的语音质量不够好，需要在AR19上部署QOS；&lt;br&gt;
 以保证语音流量的服务质量（反向流量不要求）；&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;16-ipv6-bgp&#34;&gt;16. IPv6 BGP&lt;/h2&gt;
 &lt;ul class=&#34;contains-task-list&#34;&gt;
-&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4229337&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4229337&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
+&lt;li class=&#34;task-list-item&#34;&gt;&lt;input class=&#34;task-list-item-checkbox&#34; checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34; id=&#34;task-item-4762070&#34;&gt;&lt;label class=&#34;task-list-item-label&#34; for=&#34;task-item-4762070&#34;&gt; 已完成&lt;/label&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;AS200中AR9 AR4 AR5上面各有一个IPV6客户站点（loopback1模拟），AS100中有AR2 AR7上各有一个IPV6客户站点（loopback1模拟），要求这几个站点都能互通，并且要求双向路径要优选AR2-AR4之间的链路，一旦主用链路出现问题在使用备用链路AR2-AR5；&lt;br&gt;
 现在这几个站点之间的互通存在部分问题，请解决；&lt;/p&gt;
