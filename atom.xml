@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-08-23T02:03:06.065Z</updated>
+    <updated>2021-08-30T14:12:51.638Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
@@ -11,7 +11,21 @@
     <icon>https://fqj-web.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 飞琼君·WebOS</rights>
     <entry>
-        <title type="html"><![CDATA[存储高可用性：iSCSI、RAID、LVM]]></title>
+        <title type="html"><![CDATA[PXE的快速搭建]]></title>
+        <id>https://fqj-web.github.io/post/pxe-de-kuai-su-da-jian/</id>
+        <link href="https://fqj-web.github.io/post/pxe-de-kuai-su-da-jian/">
+        </link>
+        <updated>2021-08-27T08:44:20.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[golang 第六章 函数、包和错误处理]]></title>
+        <id>https://fqj-web.github.io/post/golang-di-liu-zhang-han-shu-bao-he-cuo-wu-chu-li/</id>
+        <link href="https://fqj-web.github.io/post/golang-di-liu-zhang-han-shu-bao-he-cuo-wu-chu-li/">
+        </link>
+        <updated>2021-08-23T03:48:03.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[存储高可用性：iSCSI、NFS、RAID、LVM]]></title>
         <id>https://fqj-web.github.io/post/cun-chu-gao-ke-yong-xing-iscsiraidlvm/</id>
         <link href="https://fqj-web.github.io/post/cun-chu-gao-ke-yong-xing-iscsiraidlvm/">
         </link>
@@ -30,19 +44,5 @@
         <link href="https://fqj-web.github.io/post/golang-di-si-zhang-yun-suan-fu/">
         </link>
         <updated>2021-08-11T07:27:30.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Nginx配置访问用户名和密码]]></title>
-        <id>https://fqj-web.github.io/post/nginx-pei-zhi-fang-wen-yong-hu-ming-he-mi-ma/</id>
-        <link href="https://fqj-web.github.io/post/nginx-pei-zhi-fang-wen-yong-hu-ming-he-mi-ma/">
-        </link>
-        <updated>2021-08-05T07:49:14.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[win10_lstb_2016最后一次精简]]></title>
-        <id>https://fqj-web.github.io/post/win10_lstb_2016-zui-hou-yi-ci-jing-jian/</id>
-        <link href="https://fqj-web.github.io/post/win10_lstb_2016-zui-hou-yi-ci-jing-jian/">
-        </link>
-        <updated>2021-07-30T17:28:04.000Z</updated>
     </entry>
 </feed>
