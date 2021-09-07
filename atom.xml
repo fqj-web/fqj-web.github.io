@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-08-30T14:12:51.638Z</updated>
+    <updated>2021-09-07T16:13:38.156Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
@@ -10,6 +10,13 @@
     <logo>https://fqj-web.github.io/images/avatar.png</logo>
     <icon>https://fqj-web.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 飞琼君·WebOS</rights>
+    <entry>
+        <title type="html"><![CDATA[无密码实现ssh（ssh-keygen）]]></title>
+        <id>https://fqj-web.github.io/post/wu-mi-ma-shi-xian-sshssh-keygen/</id>
+        <link href="https://fqj-web.github.io/post/wu-mi-ma-shi-xian-sshssh-keygen/">
+        </link>
+        <updated>2021-09-07T15:13:00.000Z</updated>
+    </entry>
     <entry>
         <title type="html"><![CDATA[PXE的快速搭建]]></title>
         <id>https://fqj-web.github.io/post/pxe-de-kuai-su-da-jian/</id>
@@ -37,12 +44,5 @@
         <link href="https://fqj-web.github.io/post/golang-di-wu-zhang-cheng-xu-liu-cheng-kong-zhi/">
         </link>
         <updated>2021-08-13T03:11:45.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[golang 第四章 运算符]]></title>
-        <id>https://fqj-web.github.io/post/golang-di-si-zhang-yun-suan-fu/</id>
-        <link href="https://fqj-web.github.io/post/golang-di-si-zhang-yun-suan-fu/">
-        </link>
-        <updated>2021-08-11T07:27:30.000Z</updated>
     </entry>
 </feed>

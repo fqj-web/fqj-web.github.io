@@ -8,7 +8,7 @@
 <meta name="keywords" content="飞琼君·个人博客">
 <meta name="description" content="飞琼君个人博客，记录日常学习笔记">
 <meta name="theme-color" content="#000">
-<title>centos7禁用IPv6 | 飞琼君·WebOS</title>
+<title>无密码实现ssh（ssh-keygen） | 飞琼君·WebOS</title>
 <link rel="shortcut icon" href="/favicon.ico?v=1631031185240">
 <link rel="stylesheet" href="/media/css/gemini.css">
 <link rel="stylesheet" href="/media/fonts/font-awesome.css">
@@ -48,7 +48,7 @@
 </script>
 
 
-  <meta name="description" content="centos7禁用IPv6" />
+  <meta name="description" content="无密码实现ssh（ssh-keygen）" />
   <meta name="keywords" content="linux运维" />
 </head>
 
@@ -170,6 +170,200 @@
 
 <div class="sidebar">
   
+    <div class="sidebar-box box-shadow-wrapper bg-color right-motion" id="sidebar">
+      
+      <div class="sidebar-body gemini" id="sidebar_body">
+        
+          
+            <div style="opacity: 1;">
+              <div class="toc-box right-motion">
+  <div class="toc-wrapper auto-number no_compress"
+    id="toc_wrapper">
+    <ul class="markdownIt-TOC">
+<li><a href="#ssh-keygen%E7%AE%A1%E7%90%86%E8%8A%82%E7%82%B9%E4%B8%8A%E6%93%8D%E4%BD%9C%E9%80%82%E7%94%A81%E8%BF%9En">ssh-keygen（管理节点上操作，适用1连N）</a></li>
+</ul>
+
+  </div>
+</div>
+
+<script>
+
+  let lastTop = 0, lList = [], hList = [], postBody, lastIndex = -1;
+  let active = 'active-show', activeClass = 'active-current';
+  let tocWrapper = document.querySelector('#toc_wrapper');
+  let tocContent = tocWrapper.children[0];
+  let autoNumber = tocWrapper && tocWrapper.classList.contains('auto-number');
+
+  function addTocNumber(elem, deep) {
+    if (!elem) {
+      return;
+    }
+    let prop = elem.__proto__;
+
+    if (prop === HTMLUListElement.prototype) {
+      for (let i = 0; i < elem.children.length; i++) {
+        addTocNumber(elem.children[i], deep + (i + 1) + '.');
+      }
+    } else if (prop === HTMLLIElement.prototype) {
+      // 保存li元素
+      if (elem.children[0] && elem.children[0].__proto__ === HTMLAnchorElement.prototype) {
+        lList.push(elem);
+      }
+      for (let i = 0; i < elem.children.length; i++) {
+        let cur = elem.children[i];
+        if (cur.__proto__ === HTMLAnchorElement.prototype) {
+          if (autoNumber) {
+            cur.text = deep + ' ' + cur.text;
+          }
+        } else if (cur.__proto__ === HTMLUListElement.prototype) {
+          addTocNumber(cur, deep);
+        }
+      }
+    }
+  }
+
+  function removeParentActiveClass() {
+    let parents = tocContent.querySelectorAll('.' + active)
+    parents.forEach(function (elem) {
+      elem.classList.remove(active);
+    });
+  }
+
+  function addActiveClass(index) {
+    if (index >= 0 && index < hList.length) {
+      lList[index].classList.add(activeClass);
+    }
+  }
+
+  function removeActiveClass(index) {
+    if (index >= 0 && index < hList.length) {
+      lList[index].classList.remove(activeClass);
+    }
+  }
+
+  function addActiveLiElemment(elem, parent) {
+    if (!elem || elem === parent) {
+      return;
+    } else {
+      if (elem.__proto__ === HTMLLIElement.prototype) {
+        elem.classList.add(active);
+      }
+      addActiveLiElemment(elem.parentElement, parent);
+    }
+  }
+
+  function showToc() {
+    if (tocWrapper) {
+      postBody = document.querySelector('#post_body');
+      for (let i = 0; i < postBody.children.length; i++) {
+        if (postBody.children[i].__proto__ === HTMLHeadingElement.prototype) {
+          hList.push(postBody.children[i]);
+        }
+      }
+      if (tocWrapper.classList.contains('compress')) {
+        tocContent.classList.add('closed');
+      } else if (tocWrapper.classList.contains('no_compress')) {
+        tocContent.classList.add('expanded');
+      } else {
+        if (hList.length > 10) {
+          active = 'active-hidden'
+          tocContent.classList.add('closed');
+        } else {
+          tocContent.classList.add('expanded');
+        }
+      }
+    }
+  }
+
+  (function () {
+    // 处理不是从#一级标题开始目录
+    if (tocContent.children.length === 1 && tocContent.children[0].__proto__ === HTMLLIElement.prototype) {
+      let con = tocContent.children[0].children[0];
+      tocContent.innerHTML = con.innerHTML;
+    }
+    let markdownItTOC = document.querySelector('.markdownIt-TOC');
+    let innerHeight = window.innerHeight;
+    markdownItTOC.style = `max-height: ${innerHeight - 80 > 0 ? innerHeight - 80 : innerHeight}px`
+    addTocNumber(tocContent, '');
+  })();
+
+  document.addEventListener('scroll', function (e) {
+    if (lList.length <= 0) {
+      return;
+    }
+    let scrollTop = document.scrollingElement.scrollTop + 10;
+    let dir;
+
+    if (lastTop - scrollTop > 0) {
+      dir = 'up';
+    } else {
+      dir = 'down';
+    }
+
+    lastTop = scrollTop;
+    if (scrollTop <= 0) {
+      if (lastIndex >= 0 && lastIndex < hList.length) {
+        lList[lastIndex].classList.remove(activeClass);
+      }
+      return;
+    }
+
+    let current = 0, hasFind = false;
+    for (let i = 0; i < hList.length; i++) {
+      if (hList[i].offsetTop > scrollTop) {
+        current = i;
+        hasFind = true;
+        break;
+      }
+    }
+    if (!hasFind && scrollTop > lList[lList.length - 1].offsetTop) {
+      current = hList.length - 1;
+    } else {
+      current--;
+    }
+    if (dir === 'down') {
+      if (current > lastIndex) {
+        addActiveClass(current);
+        removeActiveClass(lastIndex)
+        lastIndex = current;
+        removeParentActiveClass();
+        lList[current] && addActiveLiElemment(lList[current].parentElement, tocContent);
+      }
+    } else {
+      if (current < lastIndex) {
+        addActiveClass(current);
+        removeActiveClass(lastIndex);
+        lastIndex = current;
+        removeParentActiveClass();
+        lList[current] && addActiveLiElemment(lList[current].parentElement, tocContent);
+      }
+    }
+  });
+
+
+  window.addEventListener('load', function () {
+    showToc();
+    document.querySelector('#sidebar').style = 'display: block;';
+    tocWrapper.classList.add('toc-active');
+    setTimeout(function () {
+      if ("createEvent" in document) {
+        let evt = document.createEvent("HTMLEvents");
+        evt.initEvent("scroll", false, true);
+        document.dispatchEvent(evt);
+      }
+      else {
+        document.fireEvent("scroll");
+      }
+    }, 500)
+  })
+
+</script>
+            </div>
+          
+        
+      </div>
+    </div>
+  
 </div>
 <script>
   const SIDEBAR_TITLE_ACTIVE = 'sidebar-title-active';
@@ -252,8 +446,8 @@
           <div class="section bg-color post post-page">
             <section class="post-header">
   <h1 class="post-title">
-    <a class="post-title-link" href="https://fqj-web.github.io/post/jin-yong-ipv6/">
-      centos7禁用IPv6
+    <a class="post-title-link" href="https://fqj-web.github.io/post/wu-mi-ma-shi-xian-sshssh-keygen/">
+      无密码实现ssh（ssh-keygen）
     </a>
   </h1>
   <div class="post-meta">
@@ -261,7 +455,7 @@
     <span class="meta-item pc-show">
       <i class="fa fa-calendar-o"></i>
       <span class="language" data-lan="publish">发布于</span>
-      <span class="publish-time" data-t="2020-09-02 10:14:11">2020-09-02</span>
+      <span class="publish-time" data-t="2021-09-07 23:13:00">2021-09-07</span>
       <span class="post-meta-divider pc-show">|</span>
     </span>
     
@@ -280,17 +474,17 @@
     
     <span class="meta-item">
       <i class="fa fa-clock-o"></i>
-      <span>1<span class="language" data-lan="minute">分钟</span></span>
+      <span>2<span class="language" data-lan="minute">分钟</span></span>
     </span>
     <span class="meta-item">
       <span class="post-meta-divider">|</span>
       <i class="fa fa-file-word-o"></i>
-      <span>217<span class="pc-show language" data-lan="words">字数</span></span>
+      <span>251<span class="pc-show language" data-lan="words">字数</span></span>
     </span>
     
     
     
-    <span id="/post/jin-yong-ipv6/" data-flag-title="centos7禁用IPv6" class="meta-item pc-show leancloud_visitors">
+    <span id="/post/wu-mi-ma-shi-xian-sshssh-keygen/" data-flag-title="无密码实现ssh（ssh-keygen）" class="meta-item pc-show leancloud_visitors">
       <span class="post-meta-divider">|</span>
       <i class="fa fa-eye"></i>
       <span><span class="language" data-lan="view">浏览量</span>：<span class="leancloud-visitors-count"></span></span>
@@ -299,38 +493,28 @@
   </div>
 </section>
             <div class="post-body next-md-body" id="post_body">
-              <p>有的时候在使用wget下载文件的时候，默认使用ipv6地址进行解析，导致无法解析域名或者下载速度很慢，此时便需要禁用ipv6地址，具体方法如下：<br>
-永久生效：</p>
-<pre><code class="language-shell"># 编辑内核参数
-vi /etc/sysctl.conf
-    # 全部网卡禁用ipv6
-    net.ipv6.conf.all.disable_ipv6 =1
-    net.ipv6.conf.default.disable_ipv6 =1
-    # 指定网卡(enp0s3)禁用ipv6\
-    net.ipv6.conf.enp0s3.disable_ipv6 =1
+              <p>管理节点，即用于ssh远程的机器：mgmt（192.168.1.11）<br>
+被管理节点，即被ssh的机器：node12（192.168.1.12），node13（192.168.1.13）</p>
+<h1 id="ssh-keygen管理节点上操作适用1连n">ssh-keygen（管理节点上操作，适用1连N）</h1>
+<p>实施步骤：<code>全程在管理节点mgmt上操作</code></p>
+<ol>
+<li>在管理节点mgmt上生成密钥，将公钥copy至被管理节点node</li>
+<li>输入被管理节点node用户密码</li>
+<li>测试</li>
+</ol>
+<pre><code class="language-shell"># 静默模式生成密钥
+ssh-keygen -t rsa -N '' -f /root/.ssh/id_rsa -q
+# -t类型，-N密码，-f文件名，-q静默模式
 
-# 编辑网络全局参数
-vi /etc/sysconfig/network
-    NETWORKING_IPV6=no
+# 发送公钥到被管理机器
+# 方式1：直接指定公钥文件
+ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.1.12  # 然后输入yes，接着输入node12的root密码
+# 方式2：不指定公钥文件，使用默认的，默认位置为账户目录下的.ssh下
+ssh-copy-id root@192.168.1.13 # 然后输入yes，接着输入node13的root密码
 
-# 编辑网卡配置参数
-vi /etc/sysconfig/network-scripts/ifcfg-en0
-    IPV6INIT=no
-
-# 部分机器去要关闭ipv6防火墙
-systemctl disable ip6tables.service
-
-# 使配置的内核参数生效
-sysctl -p
-# 然后重启网络即可
-systemctl restart network
-</code></pre>
-<p>临时生效：</p>
-<pre><code class="language-shell">echo 1&gt;/proc/sys/net/ipv6/conf/all/disable_ipv6
-echo 1&gt;/proc/sys/net/ipv6/conf/default/disable_ipv6
-# 或者
-sysctl -w net.ipv6.conf.all.disable_ipv6=1
-sysctl -w net.ipv6.conf.default.disable_ipv6=1
+# 测试
+ssh 192.168.1.12  # 或者ssh root@192.168.1.12
+ssh 192.168.1.13
 </code></pre>
 
             </div>
@@ -344,7 +528,7 @@ sysctl -w net.ipv6.conf.default.disable_ipv6=1
     </li>
     <li class="post-copyright-link">
       <strong class="language" data-lan="link">本文链接：</strong>
-      <a href="https://fqj-web.github.io/post/jin-yong-ipv6/" title="centos7禁用IPv6">https://fqj-web.github.io/post/jin-yong-ipv6/</a>
+      <a href="https://fqj-web.github.io/post/wu-mi-ma-shi-xian-sshssh-keygen/" title="无密码实现ssh（ssh-keygen）">https://fqj-web.github.io/post/wu-mi-ma-shi-xian-sshssh-keygen/</a>
     </li>
     <li class="post-copyright-license">
       <strong class="language" data-lan="copyright">版权声明： </strong>
@@ -359,15 +543,11 @@ sysctl -w net.ipv6.conf.default.disable_ipv6=1
   <div class="nav">
     <div class="nav-prev">
       
-        <i class="fa fa-chevron-left"></i>
-        <a class="nav-pc-next" title="更换pip源" href="https://fqj-web.github.io/post/geng-huan-pip-yuan/">更换pip源</a class="nav-pc-next">
-        <a class="nav-mobile-prev" title="更换pip源" href="https://fqj-web.github.io/post/geng-huan-pip-yuan/">上一篇</a>
-      
     </div>
     <div class="nav-next">
       
-        <a class="nav-pc-next" title="CentOS7管理环境变量" href="https://fqj-web.github.io/post/centos-guan-li-huan-jing-bian-liang/">CentOS7管理环境变量</a>
-        <a class="nav-mobile-next" title="CentOS7管理环境变量" href="https://fqj-web.github.io/post/centos-guan-li-huan-jing-bian-liang/">下一篇</a>
+        <a class="nav-pc-next" title="PXE的快速搭建" href="https://fqj-web.github.io/post/pxe-de-kuai-su-da-jian/">PXE的快速搭建</a>
+        <a class="nav-mobile-next" title="PXE的快速搭建" href="https://fqj-web.github.io/post/pxe-de-kuai-su-da-jian/">下一篇</a>
         <i class="fa fa-chevron-right"></i>
       
     </div>
