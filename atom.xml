@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-09-12T14:40:53.922Z</updated>
+    <updated>2021-09-23T14:54:37.672Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
@@ -11,38 +11,38 @@
     <icon>https://fqj-web.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 飞琼君·WebOS</rights>
     <entry>
+        <title type="html"><![CDATA[h5ai搭建（centos7&phpstudy）]]></title>
+        <id>https://fqj-web.github.io/post/h5ai-da-jian-centos7andphpstudy/</id>
+        <link href="https://fqj-web.github.io/post/h5ai-da-jian-centos7andphpstudy/">
+        </link>
+        <updated>2021-09-23T12:47:41.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[网址导航后台搭建（WebStack-Laravel）]]></title>
+        <id>https://fqj-web.github.io/post/wang-zhi-dao-hang-hou-tai-da-jian-dycms/</id>
+        <link href="https://fqj-web.github.io/post/wang-zhi-dao-hang-hou-tai-da-jian-dycms/">
+        </link>
+        <updated>2021-09-20T04:20:48.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Windows Defender病毒库更新]]></title>
+        <id>https://fqj-web.github.io/post/windows-defender-bing-du-ku-geng-xin/</id>
+        <link href="https://fqj-web.github.io/post/windows-defender-bing-du-ku-geng-xin/">
+        </link>
+        <updated>2021-09-16T13:43:18.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Centos7 源码编译安装wireshark3.4.8]]></title>
+        <id>https://fqj-web.github.io/post/centos7-yuan-ma-bian-yi-an-zhuang-wireshark348/</id>
+        <link href="https://fqj-web.github.io/post/centos7-yuan-ma-bian-yi-an-zhuang-wireshark348/">
+        </link>
+        <updated>2021-09-16T04:28:55.000Z</updated>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[Linux集群管理Cockpit]]></title>
         <id>https://fqj-web.github.io/post/linux-ji-qun-guan-li-cockpit/</id>
         <link href="https://fqj-web.github.io/post/linux-ji-qun-guan-li-cockpit/">
         </link>
         <updated>2021-09-12T13:17:02.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[无密码实现ssh（ssh-keygen）]]></title>
-        <id>https://fqj-web.github.io/post/wu-mi-ma-shi-xian-sshssh-keygen/</id>
-        <link href="https://fqj-web.github.io/post/wu-mi-ma-shi-xian-sshssh-keygen/">
-        </link>
-        <updated>2021-09-07T15:13:00.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[PXE的快速搭建]]></title>
-        <id>https://fqj-web.github.io/post/pxe-de-kuai-su-da-jian/</id>
-        <link href="https://fqj-web.github.io/post/pxe-de-kuai-su-da-jian/">
-        </link>
-        <updated>2021-08-27T08:44:20.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[golang 第六章 函数、包和错误处理]]></title>
-        <id>https://fqj-web.github.io/post/golang-di-liu-zhang-han-shu-bao-he-cuo-wu-chu-li/</id>
-        <link href="https://fqj-web.github.io/post/golang-di-liu-zhang-han-shu-bao-he-cuo-wu-chu-li/">
-        </link>
-        <updated>2021-08-23T03:48:03.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[存储高可用性：iSCSI、NFS、RAID、LVM]]></title>
-        <id>https://fqj-web.github.io/post/cun-chu-gao-ke-yong-xing-iscsiraidlvm/</id>
-        <link href="https://fqj-web.github.io/post/cun-chu-gao-ke-yong-xing-iscsiraidlvm/">
-        </link>
-        <updated>2021-08-20T13:24:20.000Z</updated>
     </entry>
 </feed>
