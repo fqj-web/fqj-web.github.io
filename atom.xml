@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-09-24T13:41:36.409Z</updated>
+    <updated>2021-09-28T17:53:08.431Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
@@ -10,6 +10,20 @@
     <logo>https://fqj-web.github.io/images/avatar.png</logo>
     <icon>https://fqj-web.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 飞琼君·WebOS</rights>
+    <entry>
+        <title type="html"><![CDATA[华为交换机NTP时间同步设置（客户端和服务端）]]></title>
+        <id>https://fqj-web.github.io/post/hua-wei-jiao-huan-ji-ntp-shi-jian-tong-bu-she-zhi-ke-hu-duan-he-fu-wu-duan/</id>
+        <link href="https://fqj-web.github.io/post/hua-wei-jiao-huan-ji-ntp-shi-jian-tong-bu-she-zhi-ke-hu-duan-he-fu-wu-duan/">
+        </link>
+        <updated>2021-09-28T17:39:33.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[自签名证书制作（openssl）]]></title>
+        <id>https://fqj-web.github.io/post/zi-qian-ming-zheng-shu-zhi-zuo-openssl/</id>
+        <link href="https://fqj-web.github.io/post/zi-qian-ming-zheng-shu-zhi-zuo-openssl/">
+        </link>
+        <updated>2021-09-27T02:41:39.000Z</updated>
+    </entry>
     <entry>
         <title type="html"><![CDATA[mysql数据类型和权限]]></title>
         <id>https://fqj-web.github.io/post/mysql-shu-ju-lei-xing-he-quan-xian/</id>
@@ -30,19 +44,5 @@
         <link href="https://fqj-web.github.io/post/wang-zhi-dao-hang-hou-tai-da-jian-dycms/">
         </link>
         <updated>2021-09-20T04:20:48.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Windows Defender病毒库更新]]></title>
-        <id>https://fqj-web.github.io/post/windows-defender-bing-du-ku-geng-xin/</id>
-        <link href="https://fqj-web.github.io/post/windows-defender-bing-du-ku-geng-xin/">
-        </link>
-        <updated>2021-09-16T13:43:18.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Centos7 源码编译安装wireshark3.4.8]]></title>
-        <id>https://fqj-web.github.io/post/centos7-yuan-ma-bian-yi-an-zhuang-wireshark348/</id>
-        <link href="https://fqj-web.github.io/post/centos7-yuan-ma-bian-yi-an-zhuang-wireshark348/">
-        </link>
-        <updated>2021-09-16T04:28:55.000Z</updated>
     </entry>
 </feed>
