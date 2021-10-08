@@ -2,14 +2,28 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://fqj-web.github.io</id>
     <title>飞琼君·WebOS</title>
-    <updated>2021-10-05T16:40:58.279Z</updated>
+    <updated>2021-10-08T15:12:09.714Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://fqj-web.github.io"/>
     <link rel="self" href="https://fqj-web.github.io/atom.xml"/>
-    <subtitle>飞琼君个人博客，记录日常学习笔记</subtitle>
+    <subtitle>飞琼君个人博客，记录日常学习笔记、项目经验等</subtitle>
     <logo>https://fqj-web.github.io/images/avatar.png</logo>
     <icon>https://fqj-web.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 飞琼君·WebOS</rights>
+    <entry>
+        <title type="html"><![CDATA[GitHub优质项目记录]]></title>
+        <id>https://fqj-web.github.io/post/github-you-zhi-xiang-mu-ji-lu/</id>
+        <link href="https://fqj-web.github.io/post/github-you-zhi-xiang-mu-ji-lu/">
+        </link>
+        <updated>2021-10-07T14:37:56.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[python之操作mysql数据库（PyMySQL）]]></title>
+        <id>https://fqj-web.github.io/post/python-zhi-cao-zuo-mysql-shu-ju-ku-pymysql/</id>
+        <link href="https://fqj-web.github.io/post/python-zhi-cao-zuo-mysql-shu-ju-ku-pymysql/">
+        </link>
+        <updated>2021-10-07T13:23:23.000Z</updated>
+    </entry>
     <entry>
         <title type="html"><![CDATA[华为交换机NTP时间同步设置（客户端和服务端）]]></title>
         <id>https://fqj-web.github.io/post/hua-wei-jiao-huan-ji-ntp-shi-jian-tong-bu-she-zhi-ke-hu-duan-he-fu-wu-duan/</id>
@@ -30,19 +44,5 @@
         <link href="https://fqj-web.github.io/post/mysql-shu-ju-lei-xing-he-quan-xian/">
         </link>
         <updated>2021-09-24T12:22:06.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[h5ai搭建（centos7&phpstudy）]]></title>
-        <id>https://fqj-web.github.io/post/h5ai-da-jian-centos7andphpstudy/</id>
-        <link href="https://fqj-web.github.io/post/h5ai-da-jian-centos7andphpstudy/">
-        </link>
-        <updated>2021-09-23T12:47:41.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[网址导航后台搭建（WebStack-Laravel）]]></title>
-        <id>https://fqj-web.github.io/post/wang-zhi-dao-hang-hou-tai-da-jian-dycms/</id>
-        <link href="https://fqj-web.github.io/post/wang-zhi-dao-hang-hou-tai-da-jian-dycms/">
-        </link>
-        <updated>2021-09-20T04:20:48.000Z</updated>
     </entry>
 </feed>
